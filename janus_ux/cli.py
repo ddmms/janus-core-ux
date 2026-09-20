@@ -17,8 +17,8 @@ from janus_ux.app import MainWindow
 from janus_ux.core.desktop_integration import get_asset_path, install_desktop_entry
 
 app = typer.Typer(
-    name="janus-core-ux",
-    help="Janus-Core UX - Desktop GUI for STFC janus-core atomistic simulations.",
+    name="janus-ux",
+    help="Janus UX - Desktop GUI for STFC janus-core atomistic simulations.",
     add_completion=False,
 )
 
@@ -26,7 +26,7 @@ app = typer.Typer(
 def build_argparser() -> argparse.ArgumentParser:
     """Construct an argparse.ArgumentParser matching the CLI options."""
     parser = argparse.ArgumentParser(
-        prog="janus-core-ux",
+        prog="janus-ux",
         description="Desktop UX for STFC janus-core atomistic simulations.",
     )
     parser.add_argument(
@@ -52,7 +52,7 @@ def build_argparser() -> argparse.ArgumentParser:
         "--version",
         "-V",
         action="version",
-        version=f"janus-core-ux {__version__}",
+        version=f"janus-ux {__version__}",
         help="Show application version and exit.",
     )
     parser.add_argument(
@@ -173,7 +173,7 @@ def cli_main(
 ):
     """Launch the Janus Core Desktop UX."""
     if version:
-        typer.echo(f"janus-core-ux {__version__}")
+        typer.echo(f"janus-ux {__version__}")
         raise typer.Exit(0)
 
     if install_desktop:

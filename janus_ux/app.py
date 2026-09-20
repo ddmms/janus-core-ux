@@ -326,7 +326,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(
                     self,
                     "Desktop Shortcut Installed",
-                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop).",  # noqa: E501
+                    "Janus UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-ux.desktop).",  # noqa: E501
                 )
             else:
                 QMessageBox.warning(

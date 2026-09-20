@@ -28,12 +28,14 @@ def install_desktop_entry() -> bool:
 
     svg_src = get_asset_path("icon.svg")
     png_src = get_asset_path("icon.png")
-    desktop_src = get_asset_path("janus-core-ux.desktop")
+    desktop_src = get_asset_path("janus-ux.desktop")
 
-    # 1. Copy icons
+    # 1. Copy icons (for both janus-ux and legacy janus-core-ux)
     if svg_src.exists():
+        shutil.copy2(svg_src, icon_scalable_dir / "janus-ux.svg")
         shutil.copy2(svg_src, icon_scalable_dir / "janus-core-ux.svg")
     if png_src.exists():
+        shutil.copy2(png_src, icon_png_dir / "janus-ux.png")
         shutil.copy2(png_src, icon_png_dir / "janus-core-ux.png")
 
     # 2. Prepare and copy .desktop file
@@ -41,11 +43,11 @@ def install_desktop_entry() -> bool:
         content = desktop_src.read_text(encoding="utf-8")
 
         # Find executable path if possible
-        which_bin = shutil.which("janus-core-ux")
+        which_bin = shutil.which("janus-ux") or shutil.which("janus-core-ux")
         if which_bin:
-            content = content.replace("Exec=janus-core-ux", f"Exec={which_bin}")
+            content = content.replace("Exec=janus-ux", f"Exec={which_bin}")
 
-        target_desktop = app_dir / "janus-core-ux.desktop"
+        target_desktop = app_dir / "janus-ux.desktop"
         target_desktop.write_text(content, encoding="utf-8")
 
         # Make executable

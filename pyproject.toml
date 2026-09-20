@@ -7,7 +7,7 @@ module-name = "janus_ux"
 module-root = ""
 
 [project]
-name = "janus-core-ux"
+name = "janus-ux"
 version = "0.1.2"
 description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemiscope 3D visualization, interactive graphs, and multi-MLIP support"
 authors = [{ name = "Janus UX Team" }]
@@ -51,6 +51,7 @@ Repository = "https://github.com/stfc/janus-core"
 Documentation = "https://context7.com/stfc/janus-core"
 
 [project.scripts]
+janus-ux = "janus_ux.main:main"
 janus-core-ux = "janus_ux.main:main"
 
 [tool.ruff]

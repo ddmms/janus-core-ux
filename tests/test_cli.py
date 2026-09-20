@@ -70,4 +70,4 @@ def test_typer_cli_version():
     runner = CliRunner()
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert f"janus-core-ux {__version__}" in result.stdout
+    assert f"janus-ux {__version__}" in result.stdout

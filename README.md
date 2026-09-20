@@ -46,18 +46,20 @@ Install from PyPI or editable source using `uv`:
 uv pip install -e . --python /opt/micromamba/envs/janus/bin/python
 
 # Or install desktop shortcut and system icon
-janus-core-ux --install-desktop
+janus-ux --install-desktop
 ```
 
 ---
 
 ## Launching the Application
 
-Run directly from the command line using any of the installed entry points:
+Run directly from the command line using the installed entry point:
 
 ```bash
-janus-core-ux
+janus-ux
 ```
+
+*(Legacy `janus-core-ux` is also supported as an alias)*
 
 You can also launch it directly from your Linux system desktop application launcher (GNOME, KDE Plasma, XFCE).
 
@@ -67,7 +69,7 @@ You can also launch it directly from your Linux system desktop application launc
 
 To register the desktop application shortcut and system icon to `~/.local/share/applications` and `~/.local/share/icons`:
 
-- Run CLI flag: `janus-core-ux --install-desktop`
+- Run CLI flag: `janus-ux --install-desktop`
 - Or from inside the GUI: Navigate to **Help -> Install Desktop Shortcut**.
 
 ---
