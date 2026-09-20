@@ -5,8 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 
-import yaml
-
 from ase import Atoms
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
@@ -25,6 +23,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+import yaml
 
 from janus_ux.core.parser import args_to_yaml_dict
 from janus_ux.core.runner import CalcRunner
@@ -132,7 +131,8 @@ class PhononsTab(QWidget):
         self.btn_save_config = QPushButton("💾 Save Config…")
         self.btn_save_config.setEnabled(False)
         self.btn_save_config.setToolTip(
-            "Save the YAML config used for the last run (re-usable with janus phonons --config)."
+            "Save the YAML config used for the last run "
+            "(re-usable with janus phonons --config)."
         )
         self.btn_save_config.clicked.connect(self._save_config)
         btn_layout.addWidget(self.btn_save_config)

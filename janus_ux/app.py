@@ -257,9 +257,7 @@ class MainWindow(QMainWindow):
 
     def _setup_statusbar(self):
         status = QStatusBar(self)
-        status.showMessage(
-            f"Janus-Core UX Ready | Working folder: {self.working_dir}"
-        )
+        status.showMessage(f"Janus-Core UX Ready | Working folder: {self.working_dir}")
         self.setStatusBar(status)
 
     def _set_working_folder(self):
@@ -274,9 +272,7 @@ class MainWindow(QMainWindow):
             self.working_dir = Path(chosen)
             self.working_dir.mkdir(parents=True, exist_ok=True)
             self._apply_working_dir()
-            self.statusBar().showMessage(
-                f"Working folder set to: {self.working_dir}"
-            )
+            self.statusBar().showMessage(f"Working folder set to: {self.working_dir}")
 
     def _open_working_folder(self):
         """Open the working folder in the system file manager."""

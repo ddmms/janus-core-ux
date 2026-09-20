@@ -112,11 +112,10 @@ class CalculatorSelector(QGroupBox):
 
         grid.addWidget(QLabel("Extra Calc-Kwargs:"), 2, 2)
         self.input_calc_kwargs = QLineEdit()
-        self.input_calc_kwargs.setPlaceholderText(
-            "e.g. {'default_dtype': 'float32'}"
-        )
+        self.input_calc_kwargs.setPlaceholderText("e.g. {'default_dtype': 'float32'}")
         self.input_calc_kwargs.setToolTip(
-            "Additional keyword arguments for calculator (passed via calc-kwargs as dict)"
+            "Additional keyword arguments for calculator "
+            "(passed via calc-kwargs as dict)"
         )
         self.input_calc_kwargs.textChanged.connect(
             lambda: self.selection_changed.emit()

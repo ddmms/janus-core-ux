@@ -135,15 +135,14 @@ def args_to_yaml_dict(args: list[str]) -> dict:
                         value = float(value)
                     except ValueError:
                         if isinstance(value, str):
-                            if (
-                                (value.startswith("{") and value.endswith("}"))
-                                or (value.startswith("[") and value.endswith("]"))
+                            if (value.startswith("{") and value.endswith("}")) or (
+                                value.startswith("[") and value.endswith("]")
                             ):
                                 try:
                                     import ast
 
                                     parsed_val = ast.literal_eval(value)
-                                    if isinstance(parsed_val, (dict, list)):
+                                    if isinstance(parsed_val, dict | list):
                                         value = parsed_val
                                 except Exception:
                                     pass
