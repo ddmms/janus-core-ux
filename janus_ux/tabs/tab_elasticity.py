@@ -204,14 +204,19 @@ class ElasticityTab(QWidget):
             return
 
         file_prefix = os.path.join(self.temp_dir, "elasticity")
+        tensor_file = f"{file_prefix}-elastic_tensor.dat"
 
         args = [
             "--struct", struct_file,
             "--file-prefix", file_prefix,
-            "--strain", str(self.spin_strain.value()),
-            "--n-points", str(self.spin_npoints.value()),
+            "--shear-magnitude", str(self.spin_strain.value()),
+            "--normal-magnitude", str(self.spin_strain.value()),
+            "--n-strains", str(self.spin_npoints.value()),
+            "--write-structures",
         ]
         args.extend(self.calc_selector.get_cli_args())
+
+        expected = {"tensor_file": tensor_file}
 
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
@@ -219,22 +224,20 @@ class ElasticityTab(QWidget):
         self.log_console.append_log("[INFO] Calculating Elastic Stiffness Tensor C_ij...")
 
         python_path = self.calc_selector.get_selected_python()
-        self.runner = CalcRunner("elasticity", args, cwd=self.temp_dir, python_path=python_path, parent=self)
+        self.runner = CalcRunner(
+            "elasticity",
+            args,
+            cwd=self.temp_dir,
+            expected_output_files=expected,
+            python_path=python_path,
+            parent=self,
+        )
         self.runner.log_line.connect(self._parse_live_log)
         self.runner.finished_calculation.connect(self._on_elasticity_finished)
         self.runner.start()
 
     def _parse_live_log(self, text: str):
         self.log_console.append_log(text)
-        # Parse output for Bulk modulus, Shear modulus, etc.
-        if "Bulk modulus" in text:
-            self.lbl_bulk.setText(text.replace("[INFO] ", "").strip())
-        elif "Shear modulus" in text:
-            self.lbl_shear.setText(text.replace("[INFO] ", "").strip())
-        elif "Young's modulus" in text:
-            self.lbl_young.setText(text.replace("[INFO] ", "").strip())
-        elif "Poisson" in text:
-            self.lbl_poisson.setText(text.replace("[INFO] ", "").strip())
 
     def cancel_elasticity(self):
         if self.runner and self.runner.isRunning():
@@ -245,5 +248,42 @@ class ElasticityTab(QWidget):
     def _on_elasticity_finished(self, success: bool, msg: str, outputs: dict):
         self.btn_run.setEnabled(True)
         self.btn_cancel.setEnabled(False)
-        if success:
-            self.log_console.append_log("[SUCCESS] Elasticity calculation complete.")
+        if not success:
+            return
+
+        file_prefix = os.path.join(self.temp_dir, "elasticity")
+        tensor_file = outputs.get("tensor_file") or f"{file_prefix}-elastic_tensor.dat"
+        if os.path.exists(tensor_file):
+            try:
+                with open(tensor_file, "r") as f:
+                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                    if lines:
+                        vals = [float(x) for x in lines[0].split()]
+                        if len(vals) >= 9:
+                            b_vrh = vals[2]
+                            s_vrh = vals[5]
+                            young = vals[6]
+                            poisson = vals[8]
+                            self.lbl_bulk.setText(f"Bulk Modulus: {b_vrh:.2f} GPa")
+                            self.lbl_shear.setText(f"Shear Modulus: {s_vrh:.2f} GPa")
+                            self.lbl_young.setText(f"Young's Modulus: {young:.2f} GPa")
+                            self.lbl_poisson.setText(f"Poisson's Ratio: {poisson:.3f}")
+
+                        if len(vals) >= 45:
+                            cij_vals = vals[9:45]
+                            from PySide6.QtWidgets import QTableWidgetItem
+                            for r in range(6):
+                                for c in range(6):
+                                    v = cij_vals[r * 6 + c]
+                                    self.table_cij.setItem(r, c, QTableWidgetItem(f"{v:.2f}"))
+            except Exception as e:
+                self.log_console.append_log(f"[WARN] Failed parsing tensor file: {e}")
+
+        # If structures were generated, load into Chemiscope
+        gen_file = f"{file_prefix}-elasticity-generated.extxyz"
+        if os.path.exists(gen_file):
+            atoms_list = read_trajectory(gen_file)
+            if atoms_list:
+                self.chemiscope.load_trajectory(atoms_list)
+
+        self.log_console.append_log("[SUCCESS] Elasticity calculation complete.")

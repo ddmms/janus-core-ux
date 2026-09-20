@@ -234,8 +234,8 @@ class GeomOptTab(QWidget):
         if self.chk_write_traj.isChecked():
             args.append("--write-traj")
 
-        out_opt_file = f"{file_prefix}-opt.xyz"
-        out_traj_file = f"{file_prefix}-opt-traj.xyz"
+        out_opt_file = f"{file_prefix}-opt.extxyz"
+        out_traj_file = f"{file_prefix}-traj.extxyz"
 
         expected = {
             "opt_file": out_opt_file,
@@ -273,14 +273,27 @@ class GeomOptTab(QWidget):
         if not success:
             return
 
-        traj_file = outputs.get("traj_file")
-        opt_file = outputs.get("opt_file")
+        # Check candidate trajectory files
+        file_prefix = os.path.join(self.temp_dir, "geomopt")
+        candidates_traj = [
+            outputs.get("traj_file"),
+            f"{file_prefix}-traj.extxyz",
+            f"{file_prefix}-opt-traj.xyz",
+            f"{file_prefix}-traj.xyz",
+        ]
+        candidates_opt = [
+            outputs.get("opt_file"),
+            f"{file_prefix}-opt.extxyz",
+            f"{file_prefix}-opt.xyz",
+        ]
 
-        # Load trajectory
-        if traj_file and os.path.exists(traj_file):
-            self.traj_atoms = read_trajectory(traj_file)
-        elif opt_file and os.path.exists(opt_file):
-            self.traj_atoms = read_trajectory(opt_file)
+        found_traj = next((f for f in candidates_traj if f and os.path.exists(f)), None)
+        found_opt = next((f for f in candidates_opt if f and os.path.exists(f)), None)
+
+        if found_traj:
+            self.traj_atoms = read_trajectory(found_traj)
+        elif found_opt:
+            self.traj_atoms = read_trajectory(found_opt)
 
         if self.traj_atoms:
             props = extract_trajectory_properties(self.traj_atoms)

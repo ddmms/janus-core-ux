@@ -50,6 +50,10 @@ jobs:
           echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
           uv pip install -e ".[dev]" --python .venv/bin/python
 
+      - name: Install MLIP dependencies
+        run: |
+          uv pip install mace-torch --extra-index-url https://download.pytorch.org/whl/cpu --python .venv/bin/python
+
       - name: Run tests under Xvfb
         run: |
           xvfb-run -a .venv/bin/pytest tests/

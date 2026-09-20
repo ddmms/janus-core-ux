@@ -218,23 +218,27 @@ class NEBTab(QWidget):
             return
 
         file_prefix = os.path.join(self.temp_dir, "neb")
-        out_traj = f"{file_prefix}-neb-traj.xyz"
+        out_band = f"{file_prefix}-neb-band.extxyz"
+        results_file = f"{file_prefix}-neb-results.dat"
 
         args = [
-            "--struct", init_file,
+            "--init-struct", init_file,
+            "--final-struct", final_file,
             "--file-prefix", file_prefix,
-            "--end-point", final_file,
             "--n-images", str(self.spin_images.value()),
             "--fmax", str(self.spin_fmax.value()),
             "--steps", str(self.spin_steps.value()),
-            "--write-traj",
+            "--write-band",
         ]
         if self.chk_climb.isChecked():
-            args.append("--climb")
+            args.extend(["--neb-kwargs", "{'climb': True}"])
 
         args.extend(self.calc_selector.get_cli_args())
 
-        expected = {"traj_file": out_traj}
+        expected = {
+            "band_file": out_band,
+            "results_file": results_file,
+        }
 
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
@@ -267,9 +271,16 @@ class NEBTab(QWidget):
         if not success:
             return
 
-        traj_file = outputs.get("traj_file")
-        if traj_file and os.path.exists(traj_file):
-            self.neb_images = read_trajectory(traj_file)
+        file_prefix = os.path.join(self.temp_dir, "neb")
+        candidates = [
+            outputs.get("band_file"),
+            f"{file_prefix}-neb-band.extxyz",
+            f"{file_prefix}-neb-traj.xyz",
+        ]
+        found_band = next((f for f in candidates if f and os.path.exists(f)), None)
+
+        if found_band:
+            self.neb_images = read_trajectory(found_band)
             if self.neb_images:
                 props = extract_trajectory_properties(self.neb_images)
                 energies = props.get("Energy", {}).get("values", [])
@@ -290,3 +301,19 @@ class NEBTab(QWidget):
                     )
                     barrier = max(rel_energies)
                     self.log_console.append_log(f"[SUCCESS] NEB calculation converged! Activation Energy Barrier: {barrier:.4f} eV")
+
+        # Parse barrier results from results dat file
+        results_file = outputs.get("results_file") or f"{file_prefix}-neb-results.dat"
+        if os.path.exists(results_file):
+            try:
+                with open(results_file, "r") as f:
+                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                    if lines:
+                        parts = lines[0].split()
+                        if len(parts) >= 3:
+                            barr, delta_e, max_f = float(parts[0]), float(parts[1]), float(parts[2])
+                            self.log_console.append_log(
+                                f"[NEB RESULT] Activation Barrier: {barr:.4f} eV | ΔE: {delta_e:.4f} eV | Max Force: {max_f:.4f} eV/Å"
+                            )
+            except Exception:
+                pass

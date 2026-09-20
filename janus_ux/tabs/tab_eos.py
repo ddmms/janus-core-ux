@@ -188,19 +188,34 @@ class EOSTab(QWidget):
             return
 
         file_prefix = os.path.join(self.temp_dir, "eos")
-        out_traj_file = f"{file_prefix}-eos.xyz"
+        out_traj_file = f"{file_prefix}-generated.extxyz"
+        raw_dat = f"{file_prefix}-eos-raw.dat"
+        fit_dat = f"{file_prefix}-eos-fit.dat"
+
+        # Determine min/max volume scale factor
+        min_v = self.spin_min_strain.value()
+        max_v = self.spin_max_strain.value()
+        if min_v < 0:
+            min_v = round(1.0 + min_v, 4)
+        if max_v < 0.5:
+            max_v = round(1.0 + max_v, 4)
 
         args = [
             "--struct", struct_file,
             "--file-prefix", file_prefix,
-            "--min-strain", str(self.spin_min_strain.value()),
-            "--max-strain", str(self.spin_max_strain.value()),
-            "--n-points", str(self.spin_npoints.value()),
+            "--min-volume", str(min_v),
+            "--max-volume", str(max_v),
+            "--n-volumes", str(self.spin_npoints.value()),
             "--eos-type", self.combo_eos_type.currentText(),
+            "--write-structures",
         ]
         args.extend(self.calc_selector.get_cli_args())
 
-        expected = {"traj_file": out_traj_file}
+        expected = {
+            "traj_file": out_traj_file,
+            "raw_dat": raw_dat,
+            "fit_dat": fit_dat,
+        }
 
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
@@ -233,9 +248,16 @@ class EOSTab(QWidget):
         if not success:
             return
 
-        traj_file = outputs.get("traj_file")
-        if traj_file and os.path.exists(traj_file):
-            self.strained_atoms = read_trajectory(traj_file)
+        file_prefix = os.path.join(self.temp_dir, "eos")
+        candidates = [
+            outputs.get("traj_file"),
+            f"{file_prefix}-generated.extxyz",
+            f"{file_prefix}-eos.xyz",
+        ]
+        found_traj = next((f for f in candidates if f and os.path.exists(f)), None)
+
+        if found_traj:
+            self.strained_atoms = read_trajectory(found_traj)
             if self.strained_atoms:
                 props = extract_trajectory_properties(self.strained_atoms)
                 vols = props.get("Volume", {}).get("values", [])
@@ -264,3 +286,17 @@ class EOSTab(QWidget):
                         color="#89b4fa",
                     )
                 self.log_console.append_log(f"[SUCCESS] Calculated EOS across {len(self.strained_atoms)} strained unit cells.")
+
+        # Also display fit results if available
+        fit_dat = outputs.get("fit_dat") or f"{file_prefix}-eos-fit.dat"
+        if os.path.exists(fit_dat):
+            try:
+                with open(fit_dat, "r") as f:
+                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                    if lines:
+                        parts = lines[0].split()
+                        if len(parts) >= 3:
+                            b0, e0, v0 = float(parts[0]), float(parts[1]), float(parts[2])
+                            self.log_console.append_log(f"[EOS FIT] B0: {b0:.2f} GPa | E0: {e0:.4f} eV | V0: {v0:.2f} Å³")
+            except Exception:
+                pass

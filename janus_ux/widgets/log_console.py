@@ -57,6 +57,15 @@ class LogConsole(QWidget):
 
         self._all_lines = []
 
+    def toPlainText(self) -> str:
+        """Return the complete log text."""
+        return self.text_area.toPlainText()
+
+    @property
+    def text_edit(self) -> QTextEdit:
+        """Compatibility accessor for text_area."""
+        return self.text_area
+
     @Slot(str)
     def append_log(self, text: str):
         """Append a log line with syntax coloring."""

@@ -264,17 +264,32 @@ class SinglePointTab(QWidget):
         self.inspector.load_structure(atoms)
 
         # Energy
-        energy = atoms.info.get("energy", atoms.info.get("mace_energy", None))
+        energy = atoms.info.get("energy", None)
+        if energy is None and hasattr(atoms, "calc") and atoms.calc is not None:
+            energy = atoms.calc.results.get("energy", None)
+        if energy is None:
+            for k, v in atoms.info.items():
+                if "energy" in k.lower() and isinstance(v, (int, float)):
+                    energy = v
+                    break
+
         if energy is not None:
             self.lbl_energy.setText(f"Energy: {energy:.5f} eV")
             self.lbl_energy_per_atom.setText(f"Energy / Atom: {energy / len(atoms):.5f} eV/atom")
 
         # Forces
         forces = None
-        for key in ["forces", "mace_forces"]:
+        for key in ["forces", "mace_forces", "mace_mp_forces"]:
             if key in atoms.arrays:
                 forces = atoms.arrays[key]
                 break
+        if forces is None and hasattr(atoms, "calc") and atoms.calc is not None:
+            forces = atoms.calc.results.get("forces", None)
+        if forces is None:
+            for k, v in atoms.arrays.items():
+                if "forces" in k.lower():
+                    forces = v
+                    break
 
         if forces is not None:
             max_f = np.linalg.norm(forces, axis=1).max()
@@ -291,6 +306,14 @@ class SinglePointTab(QWidget):
 
         # Stress & Pressure
         stress = atoms.info.get("stress", None)
+        if stress is None and hasattr(atoms, "calc") and atoms.calc is not None:
+            stress = atoms.calc.results.get("stress", None)
+        if stress is None:
+            for k, v in atoms.info.items():
+                if "stress" in k.lower():
+                    stress = v
+                    break
+
         if stress is not None:
             # Hydrostatic pressure P = -1/3 Tr(stress) in GPa (ASE units eV/Å³ -> GPa * 160.217)
             try:

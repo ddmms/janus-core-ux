@@ -190,7 +190,7 @@ class PhononsTab(QWidget):
         args = [
             "--struct", struct_file,
             "--file-prefix", file_prefix,
-            "--supercell-matrix", str(self.sc_x.value()), str(self.sc_y.value()), str(self.sc_z.value()),
+            "--supercell", sc_matrix,
             "--displacement", str(self.spin_displacement.value()),
         ]
         if self.chk_dos.isChecked():

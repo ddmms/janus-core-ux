@@ -46,8 +46,13 @@ class CalcRunner(QThread):
         if os.path.exists(janus_bin):
             full_cmd = [janus_bin, self.command] + self.args
         else:
-            # Fallback to uv run or python module execution
-            full_cmd = [target_py, "-m", "janus_core.cli.janus", self.command] + self.args
+            # Fallback to python execution calling app() directly
+            full_cmd = [
+                target_py,
+                "-c",
+                "from janus_core.cli.janus import app; import sys; sys.argv=['janus'] + sys.argv[1:]; app()",
+                self.command,
+            ] + self.args
 
         cmd_str = " ".join(full_cmd)
         self.log_line.emit(f"[INFO] Target Environment Python: {target_py}")
