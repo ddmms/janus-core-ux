@@ -128,14 +128,29 @@ def args_to_yaml_dict(args: list[str]) -> dict:
             # Check if next token is a value or another flag (or end of list)
             if i + 1 < len(args) and not args[i + 1].startswith("--"):
                 value: str | bool | int | float = args[i + 1]
-                # Coerce to numeric types where possible
                 try:
                     value = int(value)
                 except ValueError:
                     try:
                         value = float(value)
                     except ValueError:
-                        pass
+                        if isinstance(value, str):
+                            if (
+                                (value.startswith("{") and value.endswith("}"))
+                                or (value.startswith("[") and value.endswith("]"))
+                            ):
+                                try:
+                                    import ast
+
+                                    parsed_val = ast.literal_eval(value)
+                                    if isinstance(parsed_val, (dict, list)):
+                                        value = parsed_val
+                                except Exception:
+                                    pass
+                            elif value.lower() == "true":
+                                value = True
+                            elif value.lower() == "false":
+                                value = False
                 config[key] = value
                 i += 2
             else:

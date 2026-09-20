@@ -100,6 +100,29 @@ class CalculatorSelector(QGroupBox):
         options_layout.addWidget(self.chk_tracker)
         grid.addLayout(options_layout, 1, 4, 1, 2)
 
+        # Row 2: Model Head and Extra Calc-Kwargs
+        grid.addWidget(QLabel("Model Head:"), 2, 0)
+        self.input_head = QLineEdit()
+        self.input_head.setPlaceholderText("Optional calculator head (e.g. mpa0)")
+        self.input_head.setToolTip(
+            "Task head for multi-head models (passed via calc-kwargs)"
+        )
+        self.input_head.textChanged.connect(lambda: self.selection_changed.emit())
+        grid.addWidget(self.input_head, 2, 1)
+
+        grid.addWidget(QLabel("Extra Calc-Kwargs:"), 2, 2)
+        self.input_calc_kwargs = QLineEdit()
+        self.input_calc_kwargs.setPlaceholderText(
+            "e.g. {'default_dtype': 'float32'}"
+        )
+        self.input_calc_kwargs.setToolTip(
+            "Additional keyword arguments for calculator (passed via calc-kwargs as dict)"
+        )
+        self.input_calc_kwargs.textChanged.connect(
+            lambda: self.selection_changed.emit()
+        )
+        grid.addWidget(self.input_calc_kwargs, 2, 3, 1, 3)
+
         self.reload_environments()
 
     def reload_environments(self):
@@ -184,6 +207,31 @@ class CalculatorSelector(QGroupBox):
         env = self.get_selected_env()
         return env.python_path if env else None
 
+    def get_calc_kwargs_dict(self) -> dict:
+        """Return calculator keyword arguments as a python dict for --calc-kwargs."""
+        kwargs: dict = {}
+        if self.chk_dispersion.isChecked():
+            kwargs["dispersion"] = True
+
+        if hasattr(self, "input_head"):
+            head = self.input_head.text().strip()
+            if head:
+                kwargs["head"] = head
+
+        if hasattr(self, "input_calc_kwargs"):
+            extra_text = self.input_calc_kwargs.text().strip()
+            if extra_text:
+                try:
+                    import ast
+
+                    val = ast.literal_eval(extra_text)
+                    if isinstance(val, dict):
+                        kwargs.update(val)
+                except Exception:
+                    pass
+
+        return kwargs
+
     def get_cli_args(self) -> list[str]:
         """Generate CLI flags for janus command line execution."""
         args = [
@@ -197,8 +245,9 @@ class CalculatorSelector(QGroupBox):
         if model:
             args.extend(["--model", model])
 
-        if self.chk_dispersion.isChecked():
-            args.append("--dispersion")
+        calc_kwargs = self.get_calc_kwargs_dict()
+        if calc_kwargs:
+            args.extend(["--calc-kwargs", str(calc_kwargs)])
 
         if self.chk_tracker.isChecked():
             args.append("--tracker")
@@ -216,6 +265,7 @@ class CalculatorSelector(QGroupBox):
         model = self.input_model.text().strip()
         if model:
             res["model"] = model
-        if self.chk_dispersion.isChecked():
-            res["dispersion"] = True
+        calc_kwargs = self.get_calc_kwargs_dict()
+        if calc_kwargs:
+            res["calc_kwargs"] = calc_kwargs
         return res

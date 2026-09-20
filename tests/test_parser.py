@@ -7,6 +7,7 @@ import ase.io
 import numpy as np
 
 from janus_ux.core.parser import (
+    args_to_yaml_dict,
     extract_trajectory_properties,
     parse_md_stats,
     read_trajectory,
@@ -54,3 +55,23 @@ def test_parse_md_stats(tmp_path):
 
     assert "TempK" in parsed or "temp" in [k.lower() for k in parsed]
     assert len(list(parsed.values())[0]) == 3
+
+
+def test_args_to_yaml_dict_calc_kwargs():
+    """Test args_to_yaml_dict properly converts calc_kwargs dict string to dict."""
+    args = [
+        "--arch",
+        "mace_mp",
+        "--device",
+        "cpu",
+        "--calc-kwargs",
+        "{'dispersion': True, 'head': 'mpa0'}",
+        "--no-tracker",
+    ]
+    cfg = args_to_yaml_dict(args)
+    assert cfg["arch"] == "mace_mp"
+    assert cfg["device"] == "cpu"
+    assert isinstance(cfg["calc_kwargs"], dict)
+    assert cfg["calc_kwargs"]["dispersion"] is True
+    assert cfg["calc_kwargs"]["head"] == "mpa0"
+    assert cfg["no_tracker"] is True
