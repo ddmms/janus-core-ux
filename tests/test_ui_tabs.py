@@ -56,7 +56,13 @@ def test_main_window(qapp):
 
 def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
     t_sp = SinglePointTab()
-    t_sp._on_preset_selected("Silicon (Diamond)")
+    from ase import Atoms
+    import ase.io
+    atoms = Atoms("Si2", positions=[[0, 0, 0], [1.36, 1.36, 1.36]], cell=[5.43, 5.43, 5.43], pbc=True)
+    test_file = tmp_path / "si.xyz"
+    ase.io.write(str(test_file), atoms)
+
+    t_sp.load_structure_file(str(test_file))
     t_sp.chk_forces.setChecked(True)
     t_sp.chk_stress.setChecked(True)
 

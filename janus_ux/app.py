@@ -25,7 +25,6 @@ from janus_ux.tabs import (
     DescriptorsTab,
     EnvironmentsTab,
 )
-from janus_ux.core.presets import get_preset_structures
 
 class MainWindow(QMainWindow):
     """Main window hosting all Janus-Core calculation tabs and environment management."""
@@ -60,13 +59,6 @@ class MainWindow(QMainWindow):
         action_exit.setShortcut("Ctrl+Q")
         action_exit.triggered.connect(self.close)
         file_menu.addAction(action_exit)
-
-        # Presets Menu
-        presets_menu = menubar.addMenu("&Presets")
-        for preset_name in get_preset_structures().keys():
-            action = QAction(preset_name, self)
-            action.triggered.connect(lambda checked=False, name=preset_name: self._load_preset(name))
-            presets_menu.addAction(action)
 
         # Calculations Menu
         calc_menu = menubar.addMenu("&Calculations")
@@ -152,17 +144,10 @@ class MainWindow(QMainWindow):
 
     def _open_structure(self):
         current_tab = self.tab_widget.currentWidget()
-        if hasattr(current_tab, "_browse_structure"):
+        if hasattr(current_tab, "struct_input"):
+            current_tab.struct_input.browse_file()
+        elif hasattr(current_tab, "_browse_structure"):
             current_tab._browse_structure()
-
-    def _load_preset(self, name: str):
-        current_tab = self.tab_widget.currentWidget()
-        if hasattr(current_tab, "combo_preset"):
-            idx = current_tab.combo_preset.findText(name)
-            if idx >= 0:
-                current_tab.combo_preset.setCurrentIndex(idx)
-            elif hasattr(current_tab, "_on_preset_selected"):
-                current_tab._on_preset_selected(name)
 
     def _install_desktop_shortcut(self):
         from janus_ux.core.desktop_integration import install_desktop_entry

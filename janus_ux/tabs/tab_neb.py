@@ -26,7 +26,6 @@ from ase import Atoms
 import ase.io
 import plotly.graph_objects as go
 
-from janus_ux.core.presets import get_preset_structures
 from janus_ux.core.runner import CalcRunner
 from janus_ux.core.parser import read_trajectory, extract_trajectory_properties
 from janus_ux.widgets.calculator_selector import CalculatorSelector

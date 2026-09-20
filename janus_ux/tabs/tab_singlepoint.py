@@ -27,12 +27,12 @@ from PySide6.QtCore import Qt, Slot
 from ase import Atoms
 import ase.io
 
-from janus_ux.core.presets import get_preset_structures
 from janus_ux.core.runner import CalcRunner
 from janus_ux.core.parser import read_trajectory
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.structure_inspector import StructureInspector
+from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
 
 class SinglePointTab(QWidget):
@@ -60,27 +60,12 @@ class SinglePointTab(QWidget):
         left_layout.setContentsMargins(4, 4, 4, 4)
         left_layout.setSpacing(10)
 
-        # Structure Selection
-        struct_group = QGroupBox("Input Structure")
-        sg_layout = QGridLayout(struct_group)
-        sg_layout.addWidget(QLabel("Preset Structure:"), 0, 0)
-        self.combo_preset = QComboBox()
-        self.combo_preset.addItem("-- Select Preset --")
-        self.combo_preset.addItems(list(get_preset_structures().keys()))
-        self.combo_preset.currentTextChanged.connect(self._on_preset_selected)
-        sg_layout.addWidget(self.combo_preset, 0, 1)
-
-        sg_layout.addWidget(QLabel("Or Custom File:"), 1, 0)
-        file_box = QHBoxLayout()
-        self.input_file = QLineEdit()
-        self.input_file.setPlaceholderText("Path to .cif, .xyz, .poscar")
-        file_box.addWidget(self.input_file)
-        self.btn_browse = QPushButton("Browse...")
-        self.btn_browse.clicked.connect(self._browse_structure)
-        file_box.addWidget(self.btn_browse)
-        sg_layout.addLayout(file_box, 1, 1)
-
-        left_layout.addWidget(struct_group)
+        # Structure File Input
+        self.struct_input = StructureFileInput("Input Structure File", parent=self)
+        self.struct_input.structure_loaded.connect(self._on_structure_loaded)
+        self.struct_input.structure_cleared.connect(self._on_structure_cleared)
+        self.input_file = self.struct_input.input_file
+        left_layout.addWidget(self.struct_input)
 
         # Calculator
         self.calc_selector = CalculatorSelector(self)
@@ -188,39 +173,30 @@ class SinglePointTab(QWidget):
 
         main_layout.addWidget(splitter)
 
-    def _on_preset_selected(self, name: str):
-        presets = get_preset_structures()
-        if name in presets:
-            self.current_atoms = presets[name].copy()
-            self.inspector.load_structure(self.current_atoms)
-            self.chemiscope.load_atoms(self.current_atoms)
-            self.input_file.clear()
+    def _on_structure_loaded(self, atoms: Atoms, filepath: str):
+        self.current_atoms = atoms
+        self.inspector.load_structure(atoms)
+        self.chemiscope.load_atoms(atoms)
+
+    def _on_structure_cleared(self):
+        self.current_atoms = None
+
+    def load_structure_file(self, filepath: str) -> bool:
+        """Helper to load a structure file programmatically."""
+        return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
-        filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select Atomic Structure File", "",
-            "Structure Files (*.xyz *.cif *.poscar *.extxyz *.pdb *.json);;All Files (*)"
-        )
-        if filepath:
-            self.input_file.setText(filepath)
-            try:
-                atoms = ase.io.read(filepath)
-                self.current_atoms = atoms
-                self.inspector.load_structure(atoms)
-                self.chemiscope.load_atoms(atoms)
-                self.combo_preset.setCurrentIndex(0)
-            except Exception as e:
-                QMessageBox.critical(self, "Error Loading Structure", f"Could not read structure: {e}")
+        self.struct_input.browse_file()
 
     def run_singlepoint(self):
-        if self.current_atoms is None and not self.input_file.text().strip():
-            QMessageBox.warning(self, "No Structure", "Please select a preset or browse an input structure file.")
-            return
-
-        struct_file = self.input_file.text().strip()
+        struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
-            struct_file = os.path.join(self.temp_dir, "sp_input.xyz")
-            ase.io.write(struct_file, self.current_atoms)
+            QMessageBox.warning(
+                self,
+                "No Structure File",
+                "Please upload or select an input structure file before running single point calculation."
+            )
+            return
 
         file_prefix = os.path.join(self.temp_dir, "singlepoint")
         out_file = f"{file_prefix}-results.extxyz"

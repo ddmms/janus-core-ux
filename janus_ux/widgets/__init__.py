@@ -5,6 +5,7 @@ from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
 from janus_ux.widgets.log_console import LogConsole
 from janus_ux.widgets.structure_inspector import StructureInspector
+from janus_ux.widgets.structure_file_input import StructureFileInput
 
 __all__ = [
     "CalculatorSelector",
@@ -12,4 +13,5 @@ __all__ = [
     "InteractiveGraph",
     "LogConsole",
     "StructureInspector",
+    "StructureFileInput",
 ]
