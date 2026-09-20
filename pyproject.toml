@@ -45,8 +45,6 @@ Documentation = "https://context7.com/stfc/janus-core"
 
 [project.scripts]
 janus-core-ux = "janus_ux.main:main"
-janu-core-ux = "janus_ux.main:main"
-janus-ux = "janus_ux.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

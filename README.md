@@ -57,10 +57,6 @@ Run directly from the command line using any of the installed entry points:
 
 ```bash
 janus-core-ux
-# or
-janu-core-ux
-# or
-janus-ux
 ```
 
 You can also launch it directly from your Linux system desktop application launcher (GNOME, KDE Plasma, XFCE).
