@@ -8,7 +8,7 @@ module-root = ""
 
 [project]
 name = "janus-core-ux"
-version = "0.1.0"
+version = "0.1.1"
 description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemiscope 3D visualization, interactive graphs, and multi-MLIP support"
 authors = [{ name = "Janus UX Team" }]
 readme = "README.md"
