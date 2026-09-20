@@ -9,7 +9,7 @@ description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemisco
 authors = [{ name = "Janus UX Team" }]
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["atomistic", "simulation", "mlip", "mace", "sevennet", "chemiscope", "pyside6", "qt6", "materials-science"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -18,7 +18,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",

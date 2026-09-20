@@ -37,8 +37,10 @@ from janus_ux.widgets.log_console import LogConsole
 class NEBTab(QWidget):
     """Tab for CI-NEB minimum energy path calculations and reaction barrier determination."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
         super().__init__(parent)
+        self.is_standalone = calc_selector is None
+        self.calc_selector = calc_selector or CalculatorSelector(self)
         self.init_atoms: Optional[Atoms] = None
         self.final_atoms: Optional[Atoms] = None
         self.neb_images: List[Atoms] = []
@@ -86,9 +88,9 @@ class NEBTab(QWidget):
 
         left_layout.addWidget(struct_group)
 
-        # Calculator
-        self.calc_selector = CalculatorSelector(self)
-        left_layout.addWidget(self.calc_selector)
+        # Calculator (only shown if standalone)
+        if self.is_standalone:
+            left_layout.addWidget(self.calc_selector)
 
         # NEB Parameters
         neb_group = QGroupBox("NEB Settings")

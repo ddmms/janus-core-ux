@@ -38,8 +38,10 @@ from janus_ux.widgets.log_console import LogConsole
 class GeomOptTab(QWidget):
     """Tab for Geometry Optimization and Cell Relaxation."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
         super().__init__(parent)
+        self.is_standalone = calc_selector is None
+        self.calc_selector = calc_selector or CalculatorSelector(self)
         self.current_atoms: Optional[Atoms] = None
         self.traj_atoms: List[Atoms] = []
         self.runner: Optional[CalcRunner] = None
@@ -68,9 +70,9 @@ class GeomOptTab(QWidget):
         self.input_file = self.struct_input.input_file
         left_layout.addWidget(self.struct_input)
 
-        # Calculator Group
-        self.calc_selector = CalculatorSelector(self)
-        left_layout.addWidget(self.calc_selector)
+        # Calculator Group (only shown if tab is running standalone)
+        if self.is_standalone:
+            left_layout.addWidget(self.calc_selector)
 
         # Optimization Parameters Group
         opt_group = QGroupBox("Optimization Settings")

@@ -38,8 +38,10 @@ from janus_ux.widgets.log_console import LogConsole
 class EOSTab(QWidget):
     """Tab for Equation of State calculations."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
         super().__init__(parent)
+        self.is_standalone = calc_selector is None
+        self.calc_selector = calc_selector or CalculatorSelector(self)
         self.current_atoms: Optional[Atoms] = None
         self.strained_atoms: List[Atoms] = []
         self.runner: Optional[CalcRunner] = None
@@ -67,9 +69,9 @@ class EOSTab(QWidget):
         self.input_file = self.struct_input.input_file
         left_layout.addWidget(self.struct_input)
 
-        # Calculator
-        self.calc_selector = CalculatorSelector(self)
-        left_layout.addWidget(self.calc_selector)
+        # Calculator (only shown if standalone)
+        if self.is_standalone:
+            left_layout.addWidget(self.calc_selector)
 
         # EOS Parameters Group
         eos_group = QGroupBox("Equation of State Settings")

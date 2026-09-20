@@ -33,8 +33,10 @@ from janus_ux.widgets.log_console import LogConsole
 class DescriptorsTab(QWidget):
     """Tab for calculating MLIP descriptors."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
         super().__init__(parent)
+        self.is_standalone = calc_selector is None
+        self.calc_selector = calc_selector or CalculatorSelector(self)
         self.current_atoms: Optional[Atoms] = None
         self.runner: Optional[CalcRunner] = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_desc_")
@@ -61,9 +63,9 @@ class DescriptorsTab(QWidget):
         self.input_file = self.struct_input.input_file
         left_layout.addWidget(self.struct_input)
 
-        # Calculator
-        self.calc_selector = CalculatorSelector(self)
-        left_layout.addWidget(self.calc_selector)
+        # Calculator (only shown if standalone)
+        if self.is_standalone:
+            left_layout.addWidget(self.calc_selector)
 
         # Descriptor Options
         desc_group = QGroupBox("Descriptor Settings")

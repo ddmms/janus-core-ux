@@ -3,6 +3,8 @@
 import sys
 from PySide6.QtWidgets import (
     QMainWindow,
+    QWidget,
+    QVBoxLayout,
     QTabWidget,
     QMenuBar,
     QMenu,
@@ -14,6 +16,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtCore import Qt
 
 from janus_ux.theme import DARK_STYLESHEET
+from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.tabs import (
     SinglePointTab,
     GeomOptTab,
@@ -92,19 +95,25 @@ class MainWindow(QMainWindow):
         help_menu.addAction(action_about)
 
     def _setup_tabs(self):
+        # Global CalculatorSelector shared across all calculation modes
+        self.calc_selector = CalculatorSelector(
+            self,
+            title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)"
+        )
+
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setDocumentMode(True)
 
-        # Instantiate tabs
-        self.tab_geomopt = GeomOptTab(self)
-        self.tab_singlepoint = SinglePointTab(self)
-        self.tab_md = MDTab(self)
-        self.tab_phonons = PhononsTab(self)
-        self.tab_eos = EOSTab(self)
-        self.tab_elasticity = ElasticityTab(self)
-        self.tab_neb = NEBTab(self)
-        self.tab_descriptors = DescriptorsTab(self)
-        self.tab_environments = EnvironmentsTab(self)
+        # Instantiate tabs sharing the single global calc_selector
+        self.tab_geomopt = GeomOptTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_singlepoint = SinglePointTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_md = MDTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_phonons = PhononsTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_eos = EOSTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_elasticity = ElasticityTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_neb = NEBTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_descriptors = DescriptorsTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_environments = EnvironmentsTab(parent=self)
 
         # Add tabs
         self.tab_widget.addTab(self.tab_geomopt, "⚡ Geometry Optimization")
@@ -117,25 +126,22 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.tab_descriptors, "🧬 Descriptors")
         self.tab_widget.addTab(self.tab_environments, "⚙️ MLIP Environments")
 
-        # Connect environment update signal to all CalculatorSelector instances
+        # Connect environment update signal to the global CalculatorSelector
         self.tab_environments.environments_updated.connect(self._on_environments_updated)
 
-        self.setCentralWidget(self.tab_widget)
+        # Central container: Shared CalculatorSelector on top, tab widget below
+        container = QWidget(self)
+        c_layout = QVBoxLayout(container)
+        c_layout.setContentsMargins(8, 6, 8, 6)
+        c_layout.setSpacing(6)
+        c_layout.addWidget(self.calc_selector)
+        c_layout.addWidget(self.tab_widget)
+        self.setCentralWidget(container)
 
     def _on_environments_updated(self):
-        """Notify all calculation tabs to refresh their environment lists."""
-        for tab in [
-            self.tab_geomopt,
-            self.tab_singlepoint,
-            self.tab_md,
-            self.tab_phonons,
-            self.tab_eos,
-            self.tab_elasticity,
-            self.tab_neb,
-            self.tab_descriptors,
-        ]:
-            if hasattr(tab, "calc_selector"):
-                tab.calc_selector.reload_environments()
+        """Notify the shared CalculatorSelector to refresh its environment list."""
+        if hasattr(self, "calc_selector"):
+            self.calc_selector.reload_environments()
 
     def _setup_statusbar(self):
         status = QStatusBar(self)

@@ -14,71 +14,78 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
 )
-from janus_ux.core.presets import SUPPORTED_ARCHITECTURES, DEFAULT_MODELS
+from PySide6.QtCore import Signal
+from janus_ux.core.models import SUPPORTED_ARCHITECTURES, DEFAULT_MODELS
 from janus_ux.core.env_manager import EnvironmentManager, EnvConfig, MODEL_PACKAGE_MAP
 
 class CalculatorSelector(QGroupBox):
     """Configuration panel for MLIP Architecture, Model weights, Device, and Target Environment."""
 
-    def __init__(self, parent=None, title="MLIP Potential & Environment"):
+    selection_changed = Signal()
+
+    def __init__(self, parent=None, title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)"):
         super().__init__(title, parent)
         self.env_mgr = EnvironmentManager()
         self._setup_ui()
 
     def _setup_ui(self):
         grid = QGridLayout(self)
-        grid.setHorizontalSpacing(10)
+        grid.setHorizontalSpacing(14)
         grid.setVerticalSpacing(8)
+        grid.setContentsMargins(12, 10, 12, 10)
 
-        # 0. Environment Selection
+        # Row 0: Environment, Architecture, Device
         grid.addWidget(QLabel("Execution Environment:"), 0, 0)
+        env_box = QHBoxLayout()
+        env_box.setSpacing(6)
         self.combo_env = QComboBox()
-        self.combo_env.setToolTip("Select the micromamba / conda / venv environment containing the desired MLIP model")
+        self.combo_env.setToolTip("Select the environment containing the desired MLIP model")
         self.combo_env.currentTextChanged.connect(self._on_env_changed)
-        grid.addWidget(self.combo_env, 0, 1, 1, 2)
+        env_box.addWidget(self.combo_env)
 
         self.lbl_env_status = QLabel("● Probing")
         self.lbl_env_status.setStyleSheet("color: #a6adc8; font-size: 11px;")
-        grid.addWidget(self.lbl_env_status, 0, 3)
+        env_box.addWidget(self.lbl_env_status)
+        grid.addLayout(env_box, 0, 1)
 
-        # 1. Architecture
-        grid.addWidget(QLabel("Architecture:"), 1, 0)
+        grid.addWidget(QLabel("MLIP Architecture:"), 0, 2)
         self.combo_arch = QComboBox()
         self.combo_arch.addItems(SUPPORTED_ARCHITECTURES)
         self.combo_arch.currentTextChanged.connect(self._on_arch_changed)
-        grid.addWidget(self.combo_arch, 1, 1)
+        grid.addWidget(self.combo_arch, 0, 3)
 
-        # 2. Device
-        grid.addWidget(QLabel("Compute Device:"), 1, 2)
+        grid.addWidget(QLabel("Compute Device:"), 0, 4)
         self.combo_device = QComboBox()
         self.combo_device.addItems(["cpu", "cuda", "mps", "xpu"])
-        grid.addWidget(self.combo_device, 1, 3)
+        self.combo_device.currentTextChanged.connect(lambda: self.selection_changed.emit())
+        grid.addWidget(self.combo_device, 0, 5)
 
-        # 3. Model weights / preset
-        grid.addWidget(QLabel("Model Path / Name:"), 2, 0)
+        # Row 1: Model weights / path and Options
+        grid.addWidget(QLabel("Model Path / Name:"), 1, 0)
         model_layout = QHBoxLayout()
         model_layout.setContentsMargins(0, 0, 0, 0)
         self.input_model = QLineEdit()
         self.input_model.setPlaceholderText("Leave empty for default foundational model")
+        self.input_model.textChanged.connect(lambda: self.selection_changed.emit())
         model_layout.addWidget(self.input_model)
 
         self.btn_browse_model = QPushButton("Browse...")
         self.btn_browse_model.clicked.connect(self._browse_model)
         model_layout.addWidget(self.btn_browse_model)
-        grid.addLayout(model_layout, 2, 1, 1, 3)
+        grid.addLayout(model_layout, 1, 1, 1, 3)
 
-        # 4. Options: Dispersion & Emissions Tracker
         options_layout = QHBoxLayout()
-        self.chk_dispersion = QCheckBox("Empirical Dispersion (D3)")
+        options_layout.setSpacing(14)
+        self.chk_dispersion = QCheckBox("Dispersion (D3)")
+        self.chk_dispersion.toggled.connect(lambda: self.selection_changed.emit())
         options_layout.addWidget(self.chk_dispersion)
 
-        self.chk_tracker = QCheckBox("Track Carbon Emissions (CodeCarbon)")
+        self.chk_tracker = QCheckBox("Track Carbon")
         self.chk_tracker.setChecked(False)  # User rule: default no-tracker
         self.chk_tracker.setToolTip("Track emissions with CodeCarbon (disabled by default to prevent overhead)")
+        self.chk_tracker.toggled.connect(lambda: self.selection_changed.emit())
         options_layout.addWidget(self.chk_tracker)
-        options_layout.addStretch()
-
-        grid.addLayout(options_layout, 3, 0, 1, 4)
+        grid.addLayout(options_layout, 1, 4, 1, 2)
 
         self.reload_environments()
 
@@ -103,6 +110,7 @@ class CalculatorSelector(QGroupBox):
 
     def _on_env_changed(self):
         self._update_env_status()
+        self.selection_changed.emit()
 
     def _on_arch_changed(self, arch: str):
         default_model = DEFAULT_MODELS.get(arch, "")
@@ -123,6 +131,7 @@ class CalculatorSelector(QGroupBox):
                         break
 
         self._update_env_status()
+        self.selection_changed.emit()
 
     def _update_env_status(self):
         env = self.get_selected_env()

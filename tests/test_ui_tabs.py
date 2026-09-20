@@ -54,6 +54,25 @@ def test_main_window(qapp):
     assert "Single Point" in win.tab_widget.tabText(1)
     assert "Environments" in win.tab_widget.tabText(8)
 
+    # Verify model selection is independent of run mode and shared across all tabs
+    assert win.calc_selector is not None
+    assert win.tab_geomopt.calc_selector is win.calc_selector
+    assert win.tab_singlepoint.calc_selector is win.calc_selector
+    assert win.tab_md.calc_selector is win.calc_selector
+    assert win.tab_phonons.calc_selector is win.calc_selector
+    assert win.tab_eos.calc_selector is win.calc_selector
+    assert win.tab_elasticity.calc_selector is win.calc_selector
+    assert win.tab_neb.calc_selector is win.calc_selector
+    assert win.tab_descriptors.calc_selector is win.calc_selector
+
+    # Changing model selection globally affects all calculation modes
+    win.calc_selector.combo_arch.setCurrentText("sevennet")
+    assert win.tab_geomopt.calc_selector.combo_arch.currentText() == "sevennet"
+    assert win.tab_singlepoint.calc_selector.combo_arch.currentText() == "sevennet"
+    cli_args = win.tab_geomopt.calc_selector.get_cli_args()
+    assert "--arch" in cli_args
+    assert "sevennet" in cli_args
+
 def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
     t_sp = SinglePointTab()
     from ase import Atoms
