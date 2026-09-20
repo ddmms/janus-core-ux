@@ -5,7 +5,7 @@ Renders MainWindow and saves a screenshot.
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
 from PySide6.QtCore import QTimer
@@ -26,8 +26,8 @@ def run_verification():
 
     def capture_and_quit():
         pixmap = win.grab()
-        out_path = os.path.join(os.path.dirname(__file__), "app_screenshot.png")
-        pixmap.save(out_path, "PNG")
+        out_path = Path(__file__).resolve().parent / "app_screenshot.png"
+        pixmap.save(str(out_path), "PNG")
         print(f"Screenshot saved to: {out_path}")
         print("Environments tab rendered successfully!")
         app.quit()

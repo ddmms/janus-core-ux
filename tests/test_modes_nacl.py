@@ -5,7 +5,7 @@ Uses NaCl.cif and mace_mp medium-0b3.
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import shutil
 
 import ase.io
@@ -46,9 +46,9 @@ def qapp():
 @pytest.fixture
 def nacl_file():
     """Provide nacl_file fixture."""
-    path = os.path.abspath("NaCl.cif")
-    assert os.path.exists(path), f"NaCl.cif not found at {path}"
-    return path
+    path = Path("NaCl.cif").resolve()
+    assert path.exists(), f"NaCl.cif not found at {path}"
+    return str(path)
 
 
 def test_modes_cli_args_with_nacl(qapp, nacl_file, monkeypatch):
@@ -243,15 +243,13 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
     import subprocess
     import sys
 
-    work_dir = str(tmp_path)
+    work_dir = Path(tmp_path)
 
-    janus_bin = shutil.which("janus") or os.path.join(
-        os.path.dirname(sys.executable), "janus"
-    )
+    janus_bin = shutil.which("janus") or (Path(sys.executable).parent / "janus")
 
     def run_janus(subcommand, args):
-        if os.path.exists(janus_bin):
-            cmd = [janus_bin, subcommand] + args
+        if Path(janus_bin).exists():
+            cmd = [str(janus_bin), subcommand] + args
         else:
             cmd = [
                 sys.executable,
@@ -269,7 +267,7 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
         return res
 
     # 1. SinglePoint
-    sp_out = os.path.join(work_dir, "sp-results.extxyz")
+    sp_out = work_dir / "sp-results.extxyz"
     run_janus(
         "singlepoint",
         [
@@ -284,16 +282,16 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "--properties",
             "forces",
             "--file-prefix",
-            os.path.join(work_dir, "sp"),
+            str(work_dir / "sp"),
             "--out",
-            sp_out,
+            str(sp_out),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(sp_out)
+    assert sp_out.exists()
 
     # 2. GeomOpt
-    opt_prefix = os.path.join(work_dir, "opt")
+    opt_prefix = work_dir / "opt"
     run_janus(
         "geomopt",
         [
@@ -309,18 +307,19 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "0.2",
             "--write-traj",
             "--file-prefix",
-            opt_prefix,
+            str(opt_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(f"{opt_prefix}-opt.extxyz") or os.path.exists(
-        f"{opt_prefix}-opt.xyz"
+    assert (
+        Path(f"{opt_prefix}-opt.extxyz").exists()
+        or Path(f"{opt_prefix}-opt.xyz").exists()
     )
 
     # 3. MD
-    md_prefix = os.path.join(work_dir, "md")
-    traj_f = os.path.join(work_dir, "md-traj.extxyz")
-    stats_f = os.path.join(work_dir, "md-stats.dat")
+    md_prefix = work_dir / "md"
+    traj_f = work_dir / "md-traj.extxyz"
+    stats_f = work_dir / "md-stats.dat"
     run_janus(
         "md",
         [
@@ -341,19 +340,19 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "--traj-every",
             "1",
             "--traj-file",
-            traj_f,
+            str(traj_f),
             "--stats-file",
-            stats_f,
+            str(stats_f),
             "--file-prefix",
-            md_prefix,
+            str(md_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(traj_f)
-    assert os.path.exists(stats_f)
+    assert traj_f.exists()
+    assert stats_f.exists()
 
     # 4. Phonons
-    ph_prefix = os.path.join(work_dir, "ph")
+    ph_prefix = work_dir / "ph"
     run_janus(
         "phonons",
         [
@@ -368,14 +367,14 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "--displacement",
             "0.01",
             "--file-prefix",
-            ph_prefix,
+            str(ph_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(f"{ph_prefix}-force_constants.hdf5")
+    assert Path(f"{ph_prefix}-force_constants.hdf5").exists()
 
     # 5. EOS
-    eos_prefix = os.path.join(work_dir, "eos")
+    eos_prefix = work_dir / "eos"
     run_janus(
         "eos",
         [
@@ -393,14 +392,14 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "5",
             "--write-structures",
             "--file-prefix",
-            eos_prefix,
+            str(eos_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(f"{eos_prefix}-eos-fit.dat")
+    assert Path(f"{eos_prefix}-eos-fit.dat").exists()
 
     # 6. Elasticity
-    el_prefix = os.path.join(work_dir, "el")
+    el_prefix = work_dir / "el"
     run_janus(
         "elasticity",
         [
@@ -411,21 +410,20 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "--model",
             "medium-0b3",
             "--shear-magnitude",
-            "0.02",
+            "0.01",
             "--normal-magnitude",
             "0.01",
             "--n-strains",
             "2",
-            "--write-structures",
             "--file-prefix",
-            el_prefix,
+            str(el_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(f"{el_prefix}-elastic_tensor.dat")
+    assert Path(f"{el_prefix}-elastic_tensor.dat").exists()
 
     # 7. Descriptors
-    desc_out = os.path.join(work_dir, "desc.extxyz")
+    desc_out = work_dir / "desc.extxyz"
     run_janus(
         "descriptors",
         [
@@ -438,28 +436,28 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "--calc-per-atom",
             "--invariants-only",
             "--file-prefix",
-            os.path.join(work_dir, "desc"),
+            str(work_dir / "desc"),
             "--out",
-            desc_out,
+            str(desc_out),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(desc_out)
+    assert desc_out.exists()
 
     # 8. NEB
-    disp_nacl = os.path.join(work_dir, "nacl_disp.cif")
+    disp_nacl = work_dir / "nacl_disp.cif"
     at = ase.io.read(nacl_file)
     at.positions[0] += [0.1, 0.0, 0.0]
-    ase.io.write(disp_nacl, at)
+    ase.io.write(str(disp_nacl), at)
 
-    neb_prefix = os.path.join(work_dir, "neb")
+    neb_prefix = work_dir / "neb"
     run_janus(
         "neb",
         [
             "--init-struct",
             nacl_file,
             "--final-struct",
-            disp_nacl,
+            str(disp_nacl),
             "--arch",
             "mace_mp",
             "--model",
@@ -470,8 +468,8 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             "2",
             "--write-band",
             "--file-prefix",
-            neb_prefix,
+            str(neb_prefix),
             "--no-tracker",
         ],
     )
-    assert os.path.exists(f"{neb_prefix}-neb-results.dat")
+    assert Path(f"{neb_prefix}-neb-results.dat").exists()

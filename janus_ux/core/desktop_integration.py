@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import shutil
 import subprocess
 
 
-def get_asset_path(filename: str) -> str:
+def get_asset_path(filename: str) -> Path:
     """Return path to an asset bundled in janus_ux/assets."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, "assets", filename)
+    base_dir = Path(__file__).resolve().parent.parent
+    return base_dir / "assets" / filename
 
 
 def install_desktop_entry() -> bool:
@@ -32,14 +31,14 @@ def install_desktop_entry() -> bool:
     desktop_src = get_asset_path("janus-core-ux.desktop")
 
     # 1. Copy icons
-    if os.path.exists(svg_src):
+    if svg_src.exists():
         shutil.copy2(svg_src, icon_scalable_dir / "janus-core-ux.svg")
-    if os.path.exists(png_src):
+    if png_src.exists():
         shutil.copy2(png_src, icon_png_dir / "janus-core-ux.png")
 
     # 2. Prepare and copy .desktop file
-    if os.path.exists(desktop_src):
-        content = open(desktop_src, encoding="utf-8").read()
+    if desktop_src.exists():
+        content = desktop_src.read_text(encoding="utf-8")
 
         # Find executable path if possible
         which_bin = shutil.which("janus-core-ux")
@@ -47,11 +46,10 @@ def install_desktop_entry() -> bool:
             content = content.replace("Exec=janus-core-ux", f"Exec={which_bin}")
 
         target_desktop = app_dir / "janus-core-ux.desktop"
-        with open(target_desktop, "w", encoding="utf-8") as f:
-            f.write(content)
+        target_desktop.write_text(content, encoding="utf-8")
 
         # Make executable
-        os.chmod(target_desktop, 0o755)
+        target_desktop.chmod(0o755)
 
     # 3. Update desktop database if available
     try:

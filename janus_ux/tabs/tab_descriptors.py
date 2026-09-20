@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -148,7 +148,7 @@ class DescriptorsTab(QWidget):
     def run_descriptors(self):
         """Run descriptors."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -156,7 +156,7 @@ class DescriptorsTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "desc")
+        file_prefix = str(Path(self.temp_dir) / "desc")
         out_file = f"{file_prefix}-desc.extxyz"
 
         args = [

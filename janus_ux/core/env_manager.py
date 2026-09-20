@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 import json
-import os
+from pathlib import Path
 import subprocess
 import sys
 from typing import Any
@@ -96,9 +96,9 @@ class EnvironmentManager:
             return
         self._initialized = True
 
-        self.config_dir = os.path.expanduser("~/.config/janus_ux")
-        os.makedirs(self.config_dir, exist_ok=True)
-        self.config_file = os.path.join(self.config_dir, "environments.json")
+        self.config_dir = Path.home() / ".config" / "janus_ux"
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+        self.config_file = self.config_dir / "environments.json"
 
         self.environments: dict[str, EnvConfig] = {}
         self.load_or_discover()
@@ -111,7 +111,7 @@ class EnvironmentManager:
             self.save_to_file()
 
     def _load_from_file(self) -> bool:
-        if not os.path.exists(self.config_file):
+        if not self.config_file.exists():
             return False
         try:
             with open(self.config_file, encoding="utf-8") as f:
@@ -119,7 +119,7 @@ class EnvironmentManager:
             self.environments.clear()
             for item in data.get("environments", []):
                 cfg = EnvConfig.from_dict(item)
-                if os.path.exists(cfg.python_path):
+                if Path(cfg.python_path).exists():
                     self.environments[cfg.name] = cfg
             return len(self.environments) > 0
         except Exception as e:
@@ -137,9 +137,10 @@ class EnvironmentManager:
         except Exception as e:
             print(f"Error saving environments configuration: {e}")
 
-    def probe_environment(self, python_path: str) -> dict[str, Any]:
+    def probe_environment(self, python_path: str | Path) -> dict[str, Any]:
         """Inspect a Python executable to check Python version, janus-core, and installed MLIP packages."""  # noqa: E501
-        if not os.path.exists(python_path):
+        p_path = Path(python_path)
+        if not p_path.exists():
             return {
                 "version": "Unknown",
                 "has_janus": False,
@@ -225,35 +226,34 @@ print(json.dumps(res))
             if res.returncode == 0:
                 data = json.loads(res.stdout)
                 for env_path in data.get("envs", []):
-                    py_path = os.path.join(env_path, "bin", "python")
-                    if os.path.exists(py_path):
-                        env_name = os.path.basename(env_path)
-                        found_paths.append((f"micromamba: {env_name}", py_path))
+                    py_path = Path(env_path) / "bin" / "python"
+                    if py_path.exists():
+                        env_name = Path(env_path).name
+                        found_paths.append((f"micromamba: {env_name}", str(py_path)))
         except Exception:
             pass
 
         # 3. Standard /opt/micromamba/envs check
-        if os.path.exists("/opt/micromamba/envs"):
+        opt_envs = Path("/opt/micromamba/envs")
+        if opt_envs.exists():
             try:
-                for entry in os.listdir("/opt/micromamba/envs"):
-                    py_path = os.path.join(
-                        "/opt/micromamba/envs", entry, "bin", "python"
-                    )
-                    if os.path.exists(py_path):
-                        found_paths.append((f"micromamba: {entry}", py_path))
+                for entry in opt_envs.iterdir():
+                    py_path = entry / "bin" / "python"
+                    if py_path.exists():
+                        found_paths.append((f"micromamba: {entry.name}", str(py_path)))
             except Exception:
                 pass
 
         # De-duplicate by python_path
         seen_paths = set()
         for name, py_path in found_paths:
-            norm_path = os.path.realpath(py_path)
+            norm_path = str(Path(py_path).resolve())
             if norm_path in seen_paths:
                 continue
             seen_paths.add(norm_path)
 
             probe = self.probe_environment(py_path)
-            bin_dir = os.path.dirname(py_path)
+            bin_dir = str(Path(py_path).parent)
 
             # Set 'janus' as default if found
             is_default = ("janus" in name.lower() and "bin/python" in py_path) or len(
@@ -281,7 +281,7 @@ print(json.dumps(res))
     def add_environment(self, name: str, python_path: str) -> EnvConfig:
         """Register a new environment."""
         probe = self.probe_environment(python_path)
-        bin_dir = os.path.dirname(python_path)
+        bin_dir = str(Path(python_path).parent)
         is_first = len(self.environments) == 0
 
         cfg = EnvConfig(

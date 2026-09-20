@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from janus_ux.core.desktop_integration import get_asset_path, install_desktop_entry
 
@@ -13,9 +13,9 @@ def test_assets_exist():
     png_path = get_asset_path("icon.png")
     desktop_path = get_asset_path("janus-core-ux.desktop")
 
-    assert os.path.exists(svg_path)
-    assert os.path.exists(png_path)
-    assert os.path.exists(desktop_path)
+    assert svg_path.exists()
+    assert png_path.exists()
+    assert desktop_path.exists()
 
 
 def test_install_desktop_entry():
@@ -23,8 +23,7 @@ def test_install_desktop_entry():
     ok = install_desktop_entry()
     assert ok is True
 
-    home = os.path.expanduser("~")
-    target_desktop = os.path.join(
-        home, ".local", "share", "applications", "janus-core-ux.desktop"
+    target_desktop = (
+        Path.home() / ".local" / "share" / "applications" / "janus-core-ux.desktop"
     )
-    assert os.path.exists(target_desktop)
+    assert target_desktop.exists()

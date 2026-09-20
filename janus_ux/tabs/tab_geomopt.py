@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -212,7 +212,7 @@ class GeomOptTab(QWidget):
     def run_optimization(self):
         """Prepare and run geometry optimization in background."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -220,7 +220,7 @@ class GeomOptTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "geomopt")
+        file_prefix = str(Path(self.temp_dir) / "geomopt")
 
         # Build CLI arguments
         args = ["--struct", struct_file, "--file-prefix", file_prefix]
@@ -284,7 +284,7 @@ class GeomOptTab(QWidget):
             return
 
         # Check candidate trajectory files
-        file_prefix = os.path.join(self.temp_dir, "geomopt")
+        file_prefix = str(Path(self.temp_dir) / "geomopt")
         candidates_traj = [
             outputs.get("traj_file"),
             f"{file_prefix}-traj.extxyz",
@@ -297,8 +297,8 @@ class GeomOptTab(QWidget):
             f"{file_prefix}-opt.xyz",
         ]
 
-        found_traj = next((f for f in candidates_traj if f and os.path.exists(f)), None)
-        found_opt = next((f for f in candidates_opt if f and os.path.exists(f)), None)
+        found_traj = next((f for f in candidates_traj if f and Path(f).exists()), None)
+        found_opt = next((f for f in candidates_opt if f and Path(f).exists()), None)
 
         if found_traj:
             self.traj_atoms = read_trajectory(found_traj)

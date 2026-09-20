@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -198,7 +198,7 @@ class SinglePointTab(QWidget):
     def run_singlepoint(self):
         """Run singlepoint."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -206,7 +206,7 @@ class SinglePointTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "singlepoint")
+        file_prefix = str(Path(self.temp_dir) / "singlepoint")
         out_file = f"{file_prefix}-results.extxyz"
 
         # Build CLI arguments
@@ -266,7 +266,7 @@ class SinglePointTab(QWidget):
             return
 
         out_file = outputs.get("out_file")
-        if out_file and os.path.exists(out_file):
+        if out_file and Path(out_file).exists():
             atoms_list = read_trajectory(out_file)
             if atoms_list:
                 self.result_atoms = atoms_list[-1]

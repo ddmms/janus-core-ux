@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from ase import Atoms
 import ase.io
@@ -88,7 +88,7 @@ class StructureFileInput(QWidget):
         urls = event.mimeData().urls()
         if urls:
             path = urls[0].toLocalFile()
-            if path and os.path.isfile(path):
+            if path and Path(path).is_file():
                 self.load_file(path)
                 event.acceptProposedAction()
             else:
@@ -110,33 +110,31 @@ class StructureFileInput(QWidget):
         if filepath:
             self.load_file(filepath)
 
-    def load_file(self, filepath: str) -> bool:
+    def load_file(self, filepath: str | Path) -> bool:
         """Load atomic structure from file with ASE and notify listeners."""
-        filepath = os.path.abspath(os.path.expanduser(filepath.strip()))
-        if not os.path.isfile(filepath):
-            QMessageBox.critical(
-                self, "File Not Found", f"File does not exist:\n{filepath}"
-            )
+        p = Path(filepath).expanduser().resolve()
+        if not p.is_file():
+            QMessageBox.critical(self, "File Not Found", f"File does not exist:\n{p}")
             return False
 
         try:
-            atoms = ase.io.read(filepath)
+            atoms = ase.io.read(str(p))
             if self.require_periodic and not atoms.pbc.any():
                 QMessageBox.warning(
                     self,
                     "Periodic Boundary Warning",
-                    f"The loaded file '{os.path.basename(filepath)}' does not have periodic boundary conditions (PBC) enabled.\n"  # noqa: E501
+                    f"The loaded file '{p.name}' does not have periodic boundary conditions (PBC) enabled.\n"  # noqa: E501
                     "This calculation typically requires a 3D periodic crystal unit cell.",  # noqa: E501
                 )
 
             self.current_atoms = atoms
-            self._current_path = filepath
-            self.input_file.setText(filepath)
+            self._current_path = str(p)
+            self.input_file.setText(str(p))
 
             formula = atoms.get_chemical_formula()
             n_atoms = len(atoms)
             pbc = "Periodic" if atoms.pbc.any() else "Molecule/Cluster"
-            filename = os.path.basename(filepath)
+            filename = p.name
             self.lbl_info.setText(
                 f"✓ Loaded: {formula} ({n_atoms} atoms, {pbc}) — {filename}"
             )
@@ -144,13 +142,13 @@ class StructureFileInput(QWidget):
                 "color: #a6e3a1; font-weight: bold; font-size: 11px;"
             )
 
-            self.structure_loaded.emit(atoms, filepath)
+            self.structure_loaded.emit(atoms, str(p))
             return True
         except Exception as e:
             QMessageBox.critical(
                 self,
                 "Error Loading Structure",
-                f"Could not parse atomic structure file '{os.path.basename(filepath)}':\n{e}",  # noqa: E501
+                f"Could not parse atomic structure file '{p.name}':\n{e}",  # noqa: E501
             )
             return False
 

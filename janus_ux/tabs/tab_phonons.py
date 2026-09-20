@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -180,7 +180,7 @@ class PhononsTab(QWidget):
     def run_phonons(self):
         """Run phonons."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -188,7 +188,7 @@ class PhononsTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "phonons")
+        file_prefix = str(Path(self.temp_dir) / "phonons")
 
         sc_matrix = f"{self.sc_x.value()} {self.sc_y.value()} {self.sc_z.value()}"
 

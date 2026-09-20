@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -199,7 +199,7 @@ class MDTab(QWidget):
     def run_md(self):
         """Run md."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -207,7 +207,7 @@ class MDTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "md")
+        file_prefix = str(Path(self.temp_dir) / "md")
         traj_file = f"{file_prefix}-traj.extxyz"
         stats_file = f"{file_prefix}-stats.dat"
 
@@ -273,13 +273,13 @@ class MDTab(QWidget):
         traj_file = outputs.get("traj_file")
         stats_file = outputs.get("stats_file")
 
-        if traj_file and os.path.exists(traj_file):
+        if traj_file and Path(traj_file).exists():
             self.traj_atoms = read_trajectory(traj_file)
             if self.traj_atoms:
                 props = extract_trajectory_properties(self.traj_atoms)
                 self.chemiscope.load_trajectory(self.traj_atoms, properties=props)
 
-        if stats_file and os.path.exists(stats_file):
+        if stats_file and Path(stats_file).exists():
             self.stats_data = parse_md_stats(stats_file)
             if self.stats_data:
                 time_fs = self.stats_data.get(

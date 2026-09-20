@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import os
+from pathlib import Path
 import tempfile
 from typing import Any
 
@@ -33,15 +33,15 @@ class ChemiscopeWidget(QWidget):
             default_mode  # "default" (map + struct) or "structure" (3D only)
         )
         self.current_structures: list[Atoms] = []
-        self._temp_html_path = os.path.join(
-            tempfile.gettempdir(), f"chemiscope_{id(self)}.html"
+        self._temp_html_path = str(
+            Path(tempfile.gettempdir()) / f"chemiscope_{id(self)}.html"
         )
 
         # Static assets
-        chemiscope_pkg = os.path.dirname(chemiscope.__file__)
-        self.static_dir = os.path.join(chemiscope_pkg, "sphinx", "static")
-        self.js_path = os.path.join(self.static_dir, "chemiscope.min.js")
-        self.css_path = os.path.join(self.static_dir, "chemiscope-sphinx.css")
+        chemiscope_pkg = Path(chemiscope.__file__).parent
+        self.static_dir = chemiscope_pkg / "sphinx" / "static"
+        self.js_path = self.static_dir / "chemiscope.min.js"
+        self.css_path = self.static_dir / "chemiscope-sphinx.css"
 
         self._setup_ui()
 
@@ -158,9 +158,7 @@ class ChemiscopeWidget(QWidget):
     def _render_chemiscope_html(self, dataset_json: str, mode: str):
         """Write and load the Chemiscope container HTML into the QWebEngineView."""
         css_content = (
-            open(self.css_path, encoding="utf-8").read()
-            if os.path.exists(self.css_path)
-            else ""
+            self.css_path.read_text(encoding="utf-8") if self.css_path.exists() else ""
         )
 
         html = f"""<!DOCTYPE html>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
@@ -41,14 +42,16 @@ class CalcRunner(QThread):
 
         # Determine binary / invocation command based on target environment
         target_py = self.python_path or "/opt/micromamba/envs/janus/bin/python"
-        if not os.path.exists(target_py):
-            target_py = sys.executable
+        target_path = Path(target_py)
+        if not target_path.exists():
+            target_path = Path(sys.executable)
+            target_py = str(target_path)
 
-        bin_dir = os.path.dirname(target_py)
-        janus_bin = os.path.join(bin_dir, "janus")
+        bin_dir = target_path.parent
+        janus_bin = bin_dir / "janus"
 
-        if os.path.exists(janus_bin):
-            full_cmd = [janus_bin, self.command] + self.args
+        if janus_bin.exists():
+            full_cmd = [str(janus_bin), self.command] + self.args
         else:
             # Fallback to python execution calling app() directly
             full_cmd = [

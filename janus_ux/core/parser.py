@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from typing import Any
 
 from ase import Atoms
@@ -10,16 +10,17 @@ import ase.io
 import numpy as np
 
 
-def read_trajectory(filepath: str) -> list[Atoms]:
+def read_trajectory(filepath: str | Path) -> list[Atoms]:
     """Read all frames from an ASE-compatible structure or trajectory file."""
-    if not os.path.exists(filepath):
+    p = Path(filepath)
+    if not p.exists():
         return []
     try:
-        return ase.io.read(filepath, index=":")
+        return ase.io.read(str(p), index=":")
     except Exception as e:
         print(f"Error reading trajectory from {filepath}: {e}")
         try:
-            return [ase.io.read(filepath)]
+            return [ase.io.read(str(p))]
         except Exception:
             return []
 
@@ -100,13 +101,14 @@ def extract_trajectory_properties(traj: list[Atoms]) -> dict[str, dict[str, Any]
     return props
 
 
-def parse_md_stats(stats_path: str) -> dict[str, np.ndarray]:
+def parse_md_stats(stats_path: str | Path) -> dict[str, np.ndarray]:
     """Parse thermodynamic statistics from an MD stats file."""
-    if not os.path.exists(stats_path):
+    p = Path(stats_path)
+    if not p.exists():
         return {}
 
     try:
-        data = np.genfromtxt(stats_path, names=True)
+        data = np.genfromtxt(str(p), names=True)
         if data.size == 0:
             return {}
         result = {}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -29,7 +29,7 @@ def test_env_manager_discovery():
     # Current python or janus should be found
     default_env = mgr.get_default_environment()
     assert default_env is not None
-    assert os.path.exists(default_env.python_path)
+    assert Path(default_env.python_path).exists()
 
 
 def test_env_manager_probe():

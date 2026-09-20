@@ -34,6 +34,7 @@ dependencies = [
     "chemiscope>=1.0.0",
     "plotly>=5.0.0",
     "numpy",
+    "typer>=0.9.0",
 ]
 
 [project.optional-dependencies]

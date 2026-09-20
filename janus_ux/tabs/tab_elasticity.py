@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -200,7 +200,7 @@ class ElasticityTab(QWidget):
     def run_elasticity(self):
         """Run elasticity."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -208,7 +208,7 @@ class ElasticityTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "elasticity")
+        file_prefix = str(Path(self.temp_dir) / "elasticity")
         tensor_file = f"{file_prefix}-elastic_tensor.dat"
 
         args = [
@@ -264,9 +264,9 @@ class ElasticityTab(QWidget):
         if not success:
             return
 
-        file_prefix = os.path.join(self.temp_dir, "elasticity")
+        file_prefix = str(Path(self.temp_dir) / "elasticity")
         tensor_file = outputs.get("tensor_file") or f"{file_prefix}-elastic_tensor.dat"
-        if os.path.exists(tensor_file):
+        if Path(tensor_file).exists():
             try:
                 with open(tensor_file) as f:
                     lines = [
@@ -301,7 +301,7 @@ class ElasticityTab(QWidget):
 
         # If structures were generated, load into Chemiscope
         gen_file = f"{file_prefix}-elasticity-generated.extxyz"
-        if os.path.exists(gen_file):
+        if Path(gen_file).exists():
             atoms_list = read_trajectory(gen_file)
             if atoms_list:
                 self.chemiscope.load_trajectory(atoms_list)

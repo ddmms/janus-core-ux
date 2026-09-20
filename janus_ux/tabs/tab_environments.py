@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -292,8 +292,8 @@ class EnvironmentsTab(QWidget):
             "",
             "Python Binary (python*);;All Files (*)",
         )
-        if filepath and os.path.exists(filepath):
-            name = os.path.basename(os.path.dirname(os.path.dirname(filepath)))
+        if filepath and Path(filepath).exists():
+            name = Path(filepath).parent.parent.name
             name = f"custom: {name}"
             self.env_mgr.add_environment(name, filepath)
             self.populate_environments_table()

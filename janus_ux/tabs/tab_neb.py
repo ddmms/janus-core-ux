@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -231,9 +231,9 @@ class NEBTab(QWidget):
         final_file = self.input_final.text().strip()
         if (
             not init_file
-            or not os.path.exists(init_file)
+            or not Path(init_file).exists()
             or not final_file
-            or not os.path.exists(final_file)
+            or not Path(final_file).exists()
         ):
             QMessageBox.warning(
                 self,
@@ -242,7 +242,7 @@ class NEBTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "neb")
+        file_prefix = str(Path(self.temp_dir) / "neb")
         out_band = f"{file_prefix}-neb-band.extxyz"
         results_file = f"{file_prefix}-neb-results.dat"
 
@@ -303,13 +303,13 @@ class NEBTab(QWidget):
         if not success:
             return
 
-        file_prefix = os.path.join(self.temp_dir, "neb")
+        file_prefix = str(Path(self.temp_dir) / "neb")
         candidates = [
             outputs.get("band_file"),
             f"{file_prefix}-neb-band.extxyz",
             f"{file_prefix}-neb-traj.xyz",
         ]
-        found_band = next((f for f in candidates if f and os.path.exists(f)), None)
+        found_band = next((f for f in candidates if f and Path(f).exists()), None)
 
         if found_band:
             self.neb_images = read_trajectory(found_band)
@@ -338,7 +338,7 @@ class NEBTab(QWidget):
 
         # Parse barrier results from results dat file
         results_file = outputs.get("results_file") or f"{file_prefix}-neb-results.dat"
-        if os.path.exists(results_file):
+        if Path(results_file).exists():
             try:
                 with open(results_file) as f:
                     lines = [

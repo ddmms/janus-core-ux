@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 from typing import Any
 
@@ -20,8 +20,8 @@ class InteractiveGraph(QWidget):
     def __init__(self, parent=None, title: str = "Interactive Plot"):
         super().__init__(parent)
         self.plot_title = title
-        self._temp_html_path = os.path.join(
-            tempfile.gettempdir(), f"plotly_{id(self)}.html"
+        self._temp_html_path = str(
+            Path(tempfile.gettempdir()) / f"plotly_{id(self)}.html"
         )
 
         self._setup_ui()

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import tempfile
 
 from ase import Atoms
@@ -187,7 +187,7 @@ class EOSTab(QWidget):
     def run_eos(self):
         """Run eos."""
         struct_file = self.struct_input.get_filepath()
-        if not struct_file or not os.path.exists(struct_file):
+        if not struct_file or not Path(struct_file).exists():
             QMessageBox.warning(
                 self,
                 "No Structure File",
@@ -195,7 +195,7 @@ class EOSTab(QWidget):
             )
             return
 
-        file_prefix = os.path.join(self.temp_dir, "eos")
+        file_prefix = str(Path(self.temp_dir) / "eos")
         out_traj_file = f"{file_prefix}-generated.extxyz"
         raw_dat = f"{file_prefix}-eos-raw.dat"
         fit_dat = f"{file_prefix}-eos-fit.dat"
@@ -263,13 +263,13 @@ class EOSTab(QWidget):
         if not success:
             return
 
-        file_prefix = os.path.join(self.temp_dir, "eos")
+        file_prefix = str(Path(self.temp_dir) / "eos")
         candidates = [
             outputs.get("traj_file"),
             f"{file_prefix}-generated.extxyz",
             f"{file_prefix}-eos.xyz",
         ]
-        found_traj = next((f for f in candidates if f and os.path.exists(f)), None)
+        found_traj = next((f for f in candidates if f and Path(f).exists()), None)
 
         if found_traj:
             self.strained_atoms = read_trajectory(found_traj)
@@ -308,7 +308,7 @@ class EOSTab(QWidget):
 
         # Also display fit results if available
         fit_dat = outputs.get("fit_dat") or f"{file_prefix}-eos-fit.dat"
-        if os.path.exists(fit_dat):
+        if Path(fit_dat).exists():
             try:
                 with open(fit_dat) as f:
                     lines = [

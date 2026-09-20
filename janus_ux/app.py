@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QAction, QIcon, QPixmap
@@ -36,7 +36,14 @@ from janus_ux.widgets.calculator_selector import CalculatorSelector
 class MainWindow(QMainWindow):
     """Main window hosting all Janus-Core calculation tabs and environment management."""  # noqa: E501
 
-    def __init__(self):
+    def __init__(
+        self,
+        structure_path: Path | str | None = None,
+        initial_tab: str | int | None = None,
+        arch: str | None = None,
+        model: str | None = None,
+        device: str | None = None,
+    ):
         super().__init__()
         self.setWindowTitle("Janus-Core UX | Multi-MLIP Simulation Suite")
         self.resize(1380, 890)
@@ -47,14 +54,28 @@ class MainWindow(QMainWindow):
 
         # Set Window Icon to Janus-Core official logo
         logo_path = get_asset_path("janus-core.png")
-        if not os.path.exists(logo_path):
+        if not logo_path.exists():
             logo_path = get_asset_path("icon.png")
-        if os.path.exists(logo_path):
-            self.setWindowIcon(QIcon(logo_path))
+        if logo_path.exists():
+            self.setWindowIcon(QIcon(str(logo_path)))
 
         self._setup_menus()
         self._setup_tabs()
         self._setup_statusbar()
+
+        # Apply CLI initial overrides if provided
+        if arch and hasattr(self, "calc_selector"):
+            self.calc_selector.combo_arch.setCurrentText(arch)
+        if model and hasattr(self, "calc_selector"):
+            self.calc_selector.input_model.setText(model)
+        if device and hasattr(self, "calc_selector"):
+            self.calc_selector.combo_device.setCurrentText(device)
+
+        if initial_tab is not None:
+            self._select_tab(initial_tab)
+
+        if structure_path is not None:
+            self._load_initial_structure(Path(structure_path))
 
     def _setup_menus(self):
         menubar = self.menuBar()
@@ -138,7 +159,7 @@ class MainWindow(QMainWindow):
         # Helper to load tab QIcon
         def _tab_icon(name: str) -> QIcon:
             icon_file = get_asset_path(f"tabs/{name}.svg")
-            return QIcon(icon_file) if os.path.exists(icon_file) else QIcon()
+            return QIcon(str(icon_file)) if icon_file.exists() else QIcon()
 
         # Add tabs with explicit QIcon and clean text
         self.tab_widget.addTab(
@@ -179,11 +200,11 @@ class MainWindow(QMainWindow):
         h_layout.setSpacing(10)
 
         logo_path = get_asset_path("janus-core.png")
-        if not os.path.exists(logo_path):
+        if not logo_path.exists():
             logo_path = get_asset_path("icon.png")
-        if os.path.exists(logo_path):
+        if logo_path.exists():
             logo_lbl = QLabel(header)
-            pix = QPixmap(logo_path).scaledToHeight(28, Qt.SmoothTransformation)
+            pix = QPixmap(str(logo_path)).scaledToHeight(28, Qt.SmoothTransformation)
             logo_lbl.setPixmap(pix)
             h_layout.addWidget(logo_lbl)
 
@@ -249,10 +270,10 @@ class MainWindow(QMainWindow):
         msg = QMessageBox(self)
         msg.setWindowTitle("About Janus-Core UX")
         logo_path = get_asset_path("janus-core.png")
-        if not os.path.exists(logo_path):
+        if not logo_path.exists():
             logo_path = get_asset_path("icon.png")
-        if os.path.exists(logo_path):
-            pix = QPixmap(logo_path).scaled(
+        if logo_path.exists():
+            pix = QPixmap(str(logo_path)).scaled(
                 80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             msg.setIconPixmap(pix)
@@ -269,3 +290,43 @@ class MainWindow(QMainWindow):
             "</ul>"
         )
         msg.exec()
+
+    def _select_tab(self, tab_identifier: str | int):
+        """Switch to a tab by index or name substring."""
+        if isinstance(tab_identifier, int):
+            if 0 <= tab_identifier < self.tab_widget.count():
+                self.tab_widget.setCurrentIndex(tab_identifier)
+            return
+
+        name = str(tab_identifier).lower().replace("-", "").replace("_", "")
+        tab_map = {
+            "geomopt": 0,
+            "opt": 0,
+            "geometry": 0,
+            "singlepoint": 1,
+            "sp": 1,
+            "md": 2,
+            "moleculardynamics": 2,
+            "phonons": 3,
+            "phonon": 3,
+            "eos": 4,
+            "elasticity": 5,
+            "neb": 6,
+            "descriptors": 7,
+            "environments": 8,
+            "envs": 8,
+        }
+        for k, idx in tab_map.items():
+            if k in name:
+                self.tab_widget.setCurrentIndex(idx)
+                break
+
+    def _load_initial_structure(self, structure_path: Path):
+        """Load an initial structure file into the active tab."""
+        if not structure_path.exists():
+            return
+        curr_tab = self.tab_widget.currentWidget()
+        if hasattr(curr_tab, "load_structure_file"):
+            curr_tab.load_structure_file(structure_path)
+        elif hasattr(curr_tab, "struct_input"):
+            curr_tab.struct_input.load_file(structure_path)
