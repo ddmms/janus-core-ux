@@ -1,4 +1,4 @@
-"""Geometry Optimization Tab with interactive convergence curves and linked 3D Chemiscope viewer."""
+"""Geometry Optimization Tab with interactive convergence curves and linked 3D Chemiscope viewer."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ class GeomOptTab(QWidget):
             ["FrechetCellFilter", "ExpCellFilter", "UnitCellFilter"]
         )
         self.combo_filter.setToolTip(
-            "FrechetCellFilter provides stable metric convergence for crystal optimizations."
+            "FrechetCellFilter provides stable metric convergence for crystal optimizations."  # noqa: E501
         )
         og_layout.addWidget(self.combo_filter, 4, 1)
 
@@ -134,7 +134,7 @@ class GeomOptTab(QWidget):
         self.btn_run = QPushButton("Run Optimization")
         self.btn_run.setProperty("class", "primary")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_optimization)
         btn_layout.addWidget(self.btn_run)
@@ -195,7 +195,7 @@ class GeomOptTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
@@ -203,7 +203,7 @@ class GeomOptTab(QWidget):
 
     @Slot(int)
     def _on_graph_point_clicked(self, index: int):
-        """When user clicks a point on the convergence plot, update Chemiscope to that structure."""
+        """When user clicks a point on the convergence plot, update Chemiscope to that structure."""  # noqa: E501
         if self.traj_atoms and 0 <= index < len(self.traj_atoms):
             self.chemiscope.select_frame(index)
             self.inspector.load_structure(self.traj_atoms[index])
@@ -216,7 +216,7 @@ class GeomOptTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running geometry optimization.",
+                "Please upload or select an input structure file before running geometry optimization.",  # noqa: E501
             )
             return
 
@@ -270,6 +270,7 @@ class GeomOptTab(QWidget):
         self.runner.start()
 
     def cancel_optimization(self):
+        """Cancel optimization."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)
@@ -339,5 +340,5 @@ class GeomOptTab(QWidget):
             # Update inspector with final structure
             self.inspector.load_structure(self.traj_atoms[-1])
             self.log_console.append_log(
-                f"[SUCCESS] Loaded {len(self.traj_atoms)} frames from optimization trajectory."
+                f"[SUCCESS] Loaded {len(self.traj_atoms)} frames from optimization trajectory."  # noqa: E501
             )

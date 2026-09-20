@@ -1,4 +1,4 @@
-"""MLIP Calculator selection, device configuration, and execution environment selector."""
+"""MLIP Calculator selection, device configuration, and execution environment selector."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -20,14 +20,14 @@ from janus_ux.core.models import DEFAULT_MODELS, SUPPORTED_ARCHITECTURES
 
 
 class CalculatorSelector(QGroupBox):
-    """Configuration panel for MLIP Architecture, Model weights, Device, and Target Environment."""
+    """Configuration panel for MLIP Architecture, Model weights, Device, and Target Environment."""  # noqa: E501
 
     selection_changed = Signal()
 
     def __init__(
         self,
         parent=None,
-        title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",
+        title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",  # noqa: E501
     ):
         super().__init__(title, parent)
         self.env_mgr = EnvironmentManager()

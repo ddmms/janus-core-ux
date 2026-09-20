@@ -10,6 +10,7 @@ from janus_ux.widgets.structure_file_input import StructureFileInput
 
 
 def test_supported_architectures():
+    """Test Supported architectures."""
     assert "mace_mp" in SUPPORTED_ARCHITECTURES
     assert "sevennet" in SUPPORTED_ARCHITECTURES
     assert "chgnet" in SUPPORTED_ARCHITECTURES
@@ -18,11 +19,13 @@ def test_supported_architectures():
 
 
 def test_default_models():
+    """Test Default models."""
     assert "mace_mp" in DEFAULT_MODELS
     assert DEFAULT_MODELS["sevennet"] == "7net-0"
 
 
 def test_structure_file_input(qapp, tmp_path):
+    """Test Structure file input."""
     struct_widget = StructureFileInput("Test Structure", require_periodic=True)
     assert struct_widget.get_atoms() is None
     assert struct_widget.get_filepath() == ""

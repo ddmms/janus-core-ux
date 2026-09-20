@@ -1,4 +1,7 @@
-"""Headless / Display verification script that renders MainWindow and saves a screenshot."""
+"""Headless / Display verification script.
+
+Renders MainWindow and saves a screenshot.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +15,7 @@ from janus_ux.app import MainWindow
 
 
 def run_verification():
+    """Render main window and capture screenshot."""
     app = QApplication.instance() or QApplication(sys.argv)
     win = MainWindow()
     win.resize(1380, 890)

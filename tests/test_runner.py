@@ -6,6 +6,7 @@ from janus_ux.core.runner import CalcRunner
 
 
 def test_calc_runner_init():
+    """Test Calc runner init."""
     runner = CalcRunner(
         "geomopt",
         ["--steps", "50"],
@@ -19,6 +20,7 @@ def test_calc_runner_init():
 
 
 def test_calc_runner_cancellation():
+    """Test Calc runner cancellation."""
     runner = CalcRunner("md", ["--steps", "1000"])
     runner.cancel()
     assert runner._is_cancelled

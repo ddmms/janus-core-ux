@@ -14,6 +14,7 @@ from janus_ux.core.parser import (
 
 
 def test_read_trajectory(tmp_path):
+    """Test Read trajectory."""
     atoms1 = ase.build.bulk("Cu", "fcc", a=3.6, cubic=True)
     atoms2 = ase.build.bulk("Cu", "fcc", a=3.7, cubic=True)
     traj_path = str(tmp_path / "test_traj.xyz")
@@ -26,6 +27,7 @@ def test_read_trajectory(tmp_path):
 
 
 def test_extract_trajectory_properties():
+    """Test Extract trajectory properties."""
     atoms = ase.build.bulk("Si", "diamond", a=5.43)
     atoms.info["energy"] = -12.4
     atoms.arrays["forces"] = np.zeros((len(atoms), 3))
@@ -40,6 +42,7 @@ def test_extract_trajectory_properties():
 
 
 def test_parse_md_stats(tmp_path):
+    """Test Parse md stats."""
     stats_file = tmp_path / "stats.dat"
     content = """# Time(ps)   Step   Temp(K)   Epot(eV)   Ekin(eV)   Etot(eV)
 0.000000      0   300.000   -10.5000   0.450000   -10.0500

@@ -1,4 +1,4 @@
-"""Descriptors Tab for calculating and visualizing MLIP atomic and structural representations."""
+"""Descriptors Tab for calculating and visualizing MLIP atomic and structural representations."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ class DescriptorsTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Compute Descriptors")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_descriptors)
         btn_layout.addWidget(self.btn_run)
@@ -139,19 +139,20 @@ class DescriptorsTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
         self.struct_input.browse_file()
 
     def run_descriptors(self):
+        """Run descriptors."""
         struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running descriptor calculation.",
+                "Please upload or select an input structure file before running descriptor calculation.",  # noqa: E501
             )
             return
 
@@ -199,6 +200,7 @@ class DescriptorsTab(QWidget):
         self.runner.start()
 
     def cancel_descriptors(self):
+        """Cancel descriptors."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)

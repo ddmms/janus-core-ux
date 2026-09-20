@@ -10,6 +10,7 @@ from janus_ux.widgets.interactive_graph import InteractiveGraph
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -17,12 +18,14 @@ def qapp():
 
 
 def test_interactive_graph_init(qapp):
+    """Test Interactive graph init."""
     graph = InteractiveGraph(title="Test Convergence")
     assert graph.plot_title == "Test Convergence"
     assert graph.web_view is not None
 
 
 def test_interactive_graph_click_signal(qapp):
+    """Test Interactive graph click signal."""
     graph = InteractiveGraph(title="Test Plot")
     clicked_indices = []
     graph.point_clicked.connect(lambda idx: clicked_indices.append(idx))
@@ -36,6 +39,7 @@ def test_interactive_graph_click_signal(qapp):
 
 
 def test_interactive_graph_plot_curve(qapp):
+    """Test Interactive graph plot curve."""
     graph = InteractiveGraph()
     x = [0, 1, 2, 3]
     y = [-10.0, -10.5, -10.8, -10.9]

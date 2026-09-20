@@ -1,4 +1,4 @@
-"""Single Point Calculation Tab for computing energies, forces, stresses, and Hessians."""
+"""Single Point Calculation Tab for computing energies, forces, stresses, and Hessians."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -98,7 +98,7 @@ class SinglePointTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Single Point")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_singlepoint)
         btn_layout.addWidget(self.btn_run)
@@ -189,19 +189,20 @@ class SinglePointTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
         self.struct_input.browse_file()
 
     def run_singlepoint(self):
+        """Run singlepoint."""
         struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running single point calculation.",
+                "Please upload or select an input structure file before running single point calculation.",  # noqa: E501
             )
             return
 
@@ -251,6 +252,7 @@ class SinglePointTab(QWidget):
         self.runner.start()
 
     def cancel_singlepoint(self):
+        """Cancel singlepoint."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)
@@ -281,7 +283,7 @@ class SinglePointTab(QWidget):
             energy = atoms.calc.results.get("energy", None)
         if energy is None:
             for k, v in atoms.info.items():
-                if "energy" in k.lower() and isinstance(v, (int, float)):
+                if "energy" in k.lower() and isinstance(v, int | float):
                     energy = v
                     break
 
@@ -311,7 +313,7 @@ class SinglePointTab(QWidget):
 
             symbols = atoms.get_chemical_symbols()
             self.forces_table.setRowCount(len(forces))
-            for i, (sym, f) in enumerate(zip(symbols, forces)):
+            for i, (sym, f) in enumerate(zip(symbols, forces, strict=False)):
                 self.forces_table.setItem(i, 0, QTableWidgetItem(str(i)))
                 self.forces_table.setItem(i, 1, QTableWidgetItem(sym))
                 self.forces_table.setItem(i, 2, QTableWidgetItem(f"{f[0]:.5f}"))
@@ -329,7 +331,7 @@ class SinglePointTab(QWidget):
                     break
 
         if stress is not None:
-            # Hydrostatic pressure P = -1/3 Tr(stress) in GPa (ASE units eV/Å³ -> GPa * 160.217)
+            # Hydrostatic pressure P = -1/3 Tr(stress) in GPa (ASE units eV/Å³ -> GPa * 160.217)  # noqa: E501
             try:
                 if len(stress) == 6:
                     trace = (stress[0] + stress[1] + stress[2]) / 3.0

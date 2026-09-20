@@ -41,6 +41,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-qt>=4.4.0",
     "ruff>=0.8.0",
+    "pre-commit>=4.0.0",
 ]
 
 [project.urls]
@@ -91,4 +92,3 @@ max-args = 10
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = false
-

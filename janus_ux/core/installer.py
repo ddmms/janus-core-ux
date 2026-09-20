@@ -9,7 +9,7 @@ from PySide6.QtCore import QThread, Signal
 
 
 class PackageInstaller(QThread):
-    """Background worker to install MLIP packages into a specific environment using uv."""
+    """Background worker to install MLIP packages into a specific environment using uv."""  # noqa: E501
 
     log_line = Signal(str)
     finished_install = Signal(bool, str)
@@ -21,6 +21,7 @@ class PackageInstaller(QThread):
         self._process = None
 
     def run(self):
+        """Run."""
         pkg_str = " ".join(self.packages)
         self.log_line.emit(
             f"[INFO] Installing: {pkg_str} into {self.python_path} via uv..."

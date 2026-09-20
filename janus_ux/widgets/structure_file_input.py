@@ -52,7 +52,7 @@ class StructureFileInput(QWidget):
         file_row = QHBoxLayout()
         self.input_file = QLineEdit()
         self.input_file.setPlaceholderText(
-            "Select, enter path, or drop structure file (.cif, .xyz, .poscar, .extxyz, ...)"
+            "Select, enter path, or drop structure file (.cif, .xyz, .poscar, .extxyz, ...)"  # noqa: E501
         )
         self.input_file.returnPressed.connect(self._on_path_entered)
         file_row.addWidget(self.input_file)
@@ -76,13 +76,15 @@ class StructureFileInput(QWidget):
 
         layout.addWidget(group)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event):  # noqa: N802
+        """Handle drag enter event."""
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             event.ignore()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event):  # noqa: N802
+        """Handle drop event."""
         urls = event.mimeData().urls()
         if urls:
             path = urls[0].toLocalFile()
@@ -98,11 +100,12 @@ class StructureFileInput(QWidget):
             self.load_file(path)
 
     def browse_file(self):
+        """Open structure file dialog."""
         filepath, _ = QFileDialog.getOpenFileName(
             self,
             "Upload / Select Atomic Structure File",
             "",
-            "Atomic Structure Files (*.cif *.xyz *.poscar *.extxyz *.pdb *.json *.gen *.vasp);;All Files (*)",
+            "Atomic Structure Files (*.cif *.xyz *.poscar *.extxyz *.pdb *.json *.gen *.vasp);;All Files (*)",  # noqa: E501
         )
         if filepath:
             self.load_file(filepath)
@@ -122,8 +125,8 @@ class StructureFileInput(QWidget):
                 QMessageBox.warning(
                     self,
                     "Periodic Boundary Warning",
-                    f"The loaded file '{os.path.basename(filepath)}' does not have periodic boundary conditions (PBC) enabled.\n"
-                    "This calculation typically requires a 3D periodic crystal unit cell.",
+                    f"The loaded file '{os.path.basename(filepath)}' does not have periodic boundary conditions (PBC) enabled.\n"  # noqa: E501
+                    "This calculation typically requires a 3D periodic crystal unit cell.",  # noqa: E501
                 )
 
             self.current_atoms = atoms
@@ -147,11 +150,12 @@ class StructureFileInput(QWidget):
             QMessageBox.critical(
                 self,
                 "Error Loading Structure",
-                f"Could not parse atomic structure file '{os.path.basename(filepath)}':\n{e}",
+                f"Could not parse atomic structure file '{os.path.basename(filepath)}':\n{e}",  # noqa: E501
             )
             return False
 
     def clear(self):
+        """Clear current structure."""
         self.current_atoms = None
         self._current_path = ""
         self.input_file.clear()
@@ -162,7 +166,9 @@ class StructureFileInput(QWidget):
         self.structure_cleared.emit()
 
     def get_filepath(self) -> str:
+        """Return filepath of selected structure."""
         return self._current_path or self.input_file.text().strip()
 
     def get_atoms(self) -> Atoms | None:
+        """Return current Atoms structure."""
         return self.current_atoms

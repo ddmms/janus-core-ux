@@ -34,7 +34,7 @@ from janus_ux.widgets.calculator_selector import CalculatorSelector
 
 
 class MainWindow(QMainWindow):
-    """Main window hosting all Janus-Core calculation tabs and environment management."""
+    """Main window hosting all Janus-Core calculation tabs and environment management."""  # noqa: E501
 
     def __init__(self):
         super().__init__()
@@ -111,7 +111,7 @@ class MainWindow(QMainWindow):
         # Global CalculatorSelector shared across all calculation modes
         self.calc_selector = CalculatorSelector(
             self,
-            title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",
+            title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",  # noqa: E501
         )
 
         self.tab_widget = QTabWidget(self)
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
             h_layout.addWidget(logo_lbl)
 
         brand_title = QLabel(
-            "<b>JANUS-CORE</b> <span style='color: #89b4fa; font-weight: normal;'>UX</span>",
+            "<b>JANUS-CORE</b> <span style='color: #89b4fa; font-weight: normal;'>UX</span>",  # noqa: E501
             header,
         )
         brand_title.setStyleSheet("font-size: 15px; color: #cdd6f4;")
@@ -234,7 +234,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(
                     self,
                     "Desktop Shortcut Installed",
-                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop).",
+                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop).",  # noqa: E501
                 )
             else:
                 QMessageBox.warning(
@@ -258,14 +258,14 @@ class MainWindow(QMainWindow):
             msg.setIconPixmap(pix)
         msg.setText("<h3>Janus-Core Desktop UX</h3>")
         msg.setInformativeText(
-            "<p>A graphical user interface for <b>STFC janus-core</b> built with <b>Qt6 & PySide6</b>.</p>"
+            "<p>A graphical user interface for <b>STFC janus-core</b> built with <b>Qt6 & PySide6</b>.</p>"  # noqa: E501
             "<p><b>Features:</b></p>"
             "<ul>"
             "<li>Multi-MLIP Environments Configuration & Model installer via UV</li>"
             "<li>Chemiscope 3D atomistic structure and trajectory visualization</li>"
             "<li>Interactive 2D/3D linked graphs with point-to-structure picking</li>"
-            "<li>Dedicated tabs for Geometry Optimization, Single Point, MD, Phonons, EOS, Elasticity, NEB, and Descriptors</li>"
-            "<li>Support for MACE, SevenNet, CHGNet, FairChem, NequIP, ORB, and MatterSim</li>"
+            "<li>Dedicated tabs for Geometry Optimization, Single Point, MD, Phonons, EOS, Elasticity, NEB, and Descriptors</li>"  # noqa: E501
+            "<li>Support for MACE, SevenNet, CHGNet, FairChem, NequIP, ORB, and MatterSim</li>"  # noqa: E501
             "</ul>"
         )
         msg.exec()

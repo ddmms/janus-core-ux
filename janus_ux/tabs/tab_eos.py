@@ -1,4 +1,4 @@
-"""Equation of State (EOS) Tab for computing E(V) curves, Bulk modulus, and strained cells."""
+"""Equation of State (EOS) Tab for computing E(V) curves, Bulk modulus, and strained cells."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ class EOSTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Calculate EOS")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_eos)
         btn_layout.addWidget(self.btn_run)
@@ -169,7 +169,7 @@ class EOSTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
@@ -185,12 +185,13 @@ class EOSTab(QWidget):
             )
 
     def run_eos(self):
+        """Run eos."""
         struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input periodic crystal file before running Equation of State calculations.",
+                "Please upload or select an input periodic crystal file before running Equation of State calculations.",  # noqa: E501
             )
             return
 
@@ -249,6 +250,7 @@ class EOSTab(QWidget):
         self.runner.start()
 
     def cancel_eos(self):
+        """Cancel eos."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)
@@ -301,7 +303,7 @@ class EOSTab(QWidget):
                         color="#89b4fa",
                     )
                 self.log_console.append_log(
-                    f"[SUCCESS] Calculated EOS across {len(self.strained_atoms)} strained unit cells."
+                    f"[SUCCESS] Calculated EOS across {len(self.strained_atoms)} strained unit cells."  # noqa: E501
                 )
 
         # Also display fit results if available
@@ -323,7 +325,7 @@ class EOSTab(QWidget):
                                 float(parts[2]),
                             )
                             self.log_console.append_log(
-                                f"[EOS FIT] B0: {b0:.2f} GPa | E0: {e0:.4f} eV | V0: {v0:.2f} Å³"
+                                f"[EOS FIT] B0: {b0:.2f} GPa | E0: {e0:.4f} eV | V0: {v0:.2f} Å³"  # noqa: E501
                             )
             except Exception:
                 pass

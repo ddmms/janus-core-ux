@@ -54,13 +54,13 @@ class LogConsole(QWidget):
         self.text_area = QTextEdit()
         self.text_area.setReadOnly(True)
         self.text_area.setStyleSheet(
-            "background-color: #11111b; color: #cdd6f4; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: 12px; border: 1px solid #313244; border-radius: 6px;"
+            "background-color: #11111b; color: #cdd6f4; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: 12px; border: 1px solid #313244; border-radius: 6px;"  # noqa: E501
         )
         layout.addWidget(self.text_area)
 
         self._all_lines = []
 
-    def toPlainText(self) -> str:
+    def toPlainText(self) -> str:  # noqa: N802
         """Return the complete log text."""
         return self.text_area.toPlainText()
 
@@ -97,6 +97,7 @@ class LogConsole(QWidget):
             self.text_area.moveCursor(QTextCursor.End)
 
     def clear(self):
+        """Clear all logged text."""
         self._all_lines.clear()
         self.text_area.clear()
 

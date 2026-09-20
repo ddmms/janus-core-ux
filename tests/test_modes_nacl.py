@@ -1,4 +1,7 @@
-"""Integration and end-to-end tests for all calculation modes using NaCl.cif and mace_mp medium-0b3."""
+"""Integration and end-to-end tests for all calculation modes.
+
+Uses NaCl.cif and mace_mp medium-0b3.
+"""
 
 from __future__ import annotations
 
@@ -33,6 +36,7 @@ except ImportError:
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -41,13 +45,14 @@ def qapp():
 
 @pytest.fixture
 def nacl_file():
+    """Provide nacl_file fixture."""
     path = os.path.abspath("NaCl.cif")
     assert os.path.exists(path), f"NaCl.cif not found at {path}"
     return path
 
 
 def test_modes_cli_args_with_nacl(qapp, nacl_file, monkeypatch):
-    """Test that all 8 calculation tabs generate valid CLI arguments for NaCl.cif and mace_mp medium-0b3."""
+    """Test all 8 calculation tabs generate valid CLI arguments for NaCl.cif."""
     calc = CalculatorSelector()
     calc.combo_arch.setCurrentText("mace_mp")
     calc.input_model.setText("medium-0b3")
@@ -234,7 +239,7 @@ def test_modes_output_parsing(qapp, tmp_path):
 
 @pytest.mark.skipif(not HAS_MACE, reason="mace is not installed in this environment")
 def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
-    """End-to-end execution of all 8 calculation modes using NaCl.cif and mace_mp medium-0b3."""
+    """Run all 8 calculation modes end-to-end using NaCl.cif and mace_mp."""
     import subprocess
     import sys
 
@@ -251,7 +256,10 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
             cmd = [
                 sys.executable,
                 "-c",
-                "from janus_core.cli.janus import app; import sys; sys.argv=['janus'] + sys.argv[1:]; app()",
+                (
+                    "from janus_core.cli.janus import app; import sys; "
+                    "sys.argv=['janus'] + sys.argv[1:]; app()"
+                ),
                 subcommand,
             ] + args
         res = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True)

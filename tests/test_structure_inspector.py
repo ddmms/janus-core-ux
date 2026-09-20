@@ -11,6 +11,7 @@ from janus_ux.widgets.structure_inspector import StructureInspector
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -18,6 +19,7 @@ def qapp():
 
 
 def test_structure_inspector_load(qapp):
+    """Test Structure inspector load."""
     inspector = StructureInspector()
     atoms = ase.build.bulk("Si", "diamond", a=5.43)
     inspector.load_structure(atoms)
@@ -27,6 +29,7 @@ def test_structure_inspector_load(qapp):
 
 
 def test_structure_inspector_filter(qapp):
+    """Test Structure inspector filter."""
     inspector = StructureInspector()
     atoms = ase.build.molecule("H2O")
     inspector.load_structure(atoms)

@@ -14,6 +14,7 @@ from janus_ux.tabs.tab_environments import EnvironmentsTab
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -21,6 +22,7 @@ def qapp():
 
 
 def test_env_manager_discovery():
+    """Test Env manager discovery."""
     mgr = EnvironmentManager()
     assert len(mgr.environments) > 0
 
@@ -31,6 +33,7 @@ def test_env_manager_discovery():
 
 
 def test_env_manager_probe():
+    """Test Env manager probe."""
     mgr = EnvironmentManager()
     current_py = sys.executable
     probe = mgr.probe_environment(current_py)
@@ -42,6 +45,7 @@ def test_env_manager_probe():
 
 
 def test_environments_tab_ui(qapp):
+    """Test Environments tab ui."""
     tab = EnvironmentsTab()
     assert tab.table_envs.rowCount() > 0
     assert tab.table_models.rowCount() == len(MODEL_PACKAGE_MAP)

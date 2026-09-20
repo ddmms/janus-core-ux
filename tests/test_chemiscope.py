@@ -12,6 +12,7 @@ from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -19,6 +20,7 @@ def qapp():
 
 
 def test_extract_properties():
+    """Test Extract properties."""
     atoms1 = ase.build.bulk("Si", "diamond", a=5.43)
     atoms1.info["energy"] = -10.5
     atoms2 = atoms1.copy()
@@ -35,6 +37,7 @@ def test_extract_properties():
 
 
 def test_chemiscope_widget_init(qapp):
+    """Test Chemiscope widget init."""
     widget = ChemiscopeWidget()
     assert widget.web_view is not None
 

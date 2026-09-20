@@ -1,4 +1,4 @@
-"""Nudged Elastic Band (NEB) Tab for transition state search and activation energy barriers."""
+"""Nudged Elastic Band (NEB) Tab for transition state search and activation energy barriers."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ from janus_ux.widgets.structure_inspector import StructureInspector
 
 
 class NEBTab(QWidget):
-    """Tab for CI-NEB minimum energy path calculations and reaction barrier determination."""
+    """Tab for CI-NEB minimum energy path calculations and reaction barrier determination."""  # noqa: E501
 
     def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
@@ -125,7 +125,7 @@ class NEBTab(QWidget):
         self.chk_climb = QCheckBox("Climbing Image (CI-NEB)")
         self.chk_climb.setChecked(True)
         self.chk_climb.setToolTip(
-            "Climbing image forces the highest energy replica to converge to the exact saddle point."
+            "Climbing image forces the highest energy replica to converge to the exact saddle point."  # noqa: E501
         )
         ng_layout.addWidget(self.chk_climb, 4, 0, 1, 2)
 
@@ -135,7 +135,7 @@ class NEBTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run NEB Simulation")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_neb)
         btn_layout.addWidget(self.btn_run)
@@ -226,6 +226,7 @@ class NEBTab(QWidget):
             self.log_console.append_log(f"[INFO] Selected NEB image replica {index}")
 
     def run_neb(self):
+        """Run neb."""
         init_file = self.input_init.text().strip()
         final_file = self.input_final.text().strip()
         if (
@@ -289,6 +290,7 @@ class NEBTab(QWidget):
         self.runner.start()
 
     def cancel_neb(self):
+        """Cancel neb."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)
@@ -331,7 +333,7 @@ class NEBTab(QWidget):
                     )
                     barrier = max(rel_energies)
                     self.log_console.append_log(
-                        f"[SUCCESS] NEB calculation converged! Activation Energy Barrier: {barrier:.4f} eV"
+                        f"[SUCCESS] NEB calculation converged! Activation Energy Barrier: {barrier:.4f} eV"  # noqa: E501
                     )
 
         # Parse barrier results from results dat file
@@ -353,7 +355,7 @@ class NEBTab(QWidget):
                                 float(parts[2]),
                             )
                             self.log_console.append_log(
-                                f"[NEB RESULT] Activation Barrier: {barr:.4f} eV | ΔE: {delta_e:.4f} eV | Max Force: {max_f:.4f} eV/Å"
+                                f"[NEB RESULT] Activation Barrier: {barr:.4f} eV | ΔE: {delta_e:.4f} eV | Max Force: {max_f:.4f} eV/Å"  # noqa: E501
                             )
             except Exception:
                 pass

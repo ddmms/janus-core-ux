@@ -58,6 +58,8 @@ MODEL_PACKAGE_MAP = {
 
 @dataclass
 class EnvConfig:
+    """Configuration data class."""
+
     name: str
     python_path: str
     bin_path: str = ""
@@ -68,21 +70,24 @@ class EnvConfig:
     supported_architectures: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Convert config to dictionary."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EnvConfig:
+        """Instantiate config from dictionary."""
         return cls(**d)
 
 
 class EnvironmentManager:
-    """Manages separate Python / Conda / Micromamba environments for incompatible MLIP potentials."""
+    """Manages separate Python / Conda / Micromamba environments for incompatible MLIP potentials."""  # noqa: E501
 
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """Create singleton instance."""
         if cls._instance is None:
-            cls._instance = super(EnvironmentManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
@@ -133,7 +138,7 @@ class EnvironmentManager:
             print(f"Error saving environments configuration: {e}")
 
     def probe_environment(self, python_path: str) -> dict[str, Any]:
-        """Inspect a Python executable to check Python version, janus-core, and installed MLIP packages."""
+        """Inspect a Python executable to check Python version, janus-core, and installed MLIP packages."""  # noqa: E501
         if not os.path.exists(python_path):
             return {
                 "version": "Unknown",
@@ -145,8 +150,9 @@ class EnvironmentManager:
         code = """
 import sys, importlib.util, json
 
+v = sys.version_info
 res = {
-    "version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+    "version": f"{v.major}.{v.minor}.{v.micro}",
     "has_janus": importlib.util.find_spec("janus_core") is not None,
     "packages": {}
 }
@@ -293,6 +299,7 @@ print(json.dumps(res))
         return cfg
 
     def remove_environment(self, name: str):
+        """Remove environment."""
         if name in self.environments:
             was_default = self.environments[name].is_default
             del self.environments[name]
@@ -301,12 +308,14 @@ print(json.dumps(res))
             self.save_to_file()
 
     def set_default_environment(self, name: str):
+        """Set default environment."""
         if name in self.environments:
             for k, env in self.environments.items():
                 env.is_default = k == name
             self.save_to_file()
 
     def get_default_environment(self) -> EnvConfig | None:
+        """Return default environment."""
         for env in self.environments.values():
             if env.is_default:
                 return env
@@ -315,10 +324,11 @@ print(json.dumps(res))
         return None
 
     def get_environment(self, name: str) -> EnvConfig | None:
+        """Return environment."""
         return self.environments.get(name)
 
     def get_environments_for_arch(self, arch: str) -> list[EnvConfig]:
-        """Find environments that contain the package for a specific MLIP architecture."""
+        """Find environments that contain the package for a specific MLIP architecture."""  # noqa: E501
         matching = []
         for env in self.environments.values():
             if arch in env.supported_architectures:

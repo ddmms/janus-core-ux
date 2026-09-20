@@ -20,6 +20,7 @@ from janus_ux.tabs import (
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -27,6 +28,7 @@ def qapp():
 
 
 def test_tabs_initialization(qapp):
+    """Test Tabs initialization."""
     t_opt = GeomOptTab()
     assert t_opt.combo_optimizer.count() > 0
     assert t_opt.combo_filter.currentText() == "FrechetCellFilter"
@@ -54,6 +56,7 @@ def test_tabs_initialization(qapp):
 
 
 def test_main_window(qapp):
+    """Test Main window."""
     win = MainWindow()
     assert win.tab_widget.count() == 9
     assert "Geometry Optimization" in win.tab_widget.tabText(0)
@@ -81,6 +84,7 @@ def test_main_window(qapp):
 
 
 def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
+    """Test Singlepoint cli args."""
     t_sp = SinglePointTab()
     from ase import Atoms
     import ase.io

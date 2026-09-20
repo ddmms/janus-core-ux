@@ -18,7 +18,7 @@ def main():
         success = install_desktop_entry()
         if success:
             print(
-                "Desktop icon and .desktop shortcut installed successfully to ~/.local/share/applications!"
+                "Desktop icon and .desktop shortcut installed successfully to ~/.local/share/applications!"  # noqa: E501
             )
             sys.exit(0)
         else:

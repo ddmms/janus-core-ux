@@ -57,7 +57,9 @@ class InteractiveGraph(QWidget):
     def _load_placeholder(self):
         html = """<!DOCTYPE html>
         <html>
-        <body style="background:#181825; color:#6c7086; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:90vh; margin:0;">
+        <body style="background:#181825; color:#6c7086; font-family:sans-serif;
+                     display:flex; justify-content:center; align-items:center;
+                     height:90vh; margin:0;">
             <p>Run a calculation to view interactive curves.</p>
         </body>
         </html>"""
@@ -79,8 +81,8 @@ class InteractiveGraph(QWidget):
             template="plotly_dark",
             paper_bgcolor="#181825",
             plot_bgcolor="#1e1e2e",
-            font=dict(color="#cdd6f4", family="sans-serif", size=11),
-            margin=dict(l=50, r=20, t=40, b=45),
+            font={"color": "#cdd6f4", "family": "sans-serif", "size": 11},
+            margin={"l": 50, "r": 20, "t": 40, "b": 45},
             hovermode="closest",
         )
         fig.update_xaxes(
@@ -104,7 +106,10 @@ class InteractiveGraph(QWidget):
 <meta charset="utf-8">
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
-html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #181825; }}
+html, body {{
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; background: #181825;
+}}
 #plot-div {{ width: 100%; height: 100%; }}
 </style>
 </head>
@@ -112,7 +117,10 @@ html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden
 <div id="plot-div"></div>
 <script>
 const figData = {fig_json};
-Plotly.newPlot('plot-div', figData.data, figData.layout, {{responsive: true, displayModeBar: false}}).then(function() {{
+Plotly.newPlot(
+    'plot-div', figData.data, figData.layout,
+    {{responsive: true, displayModeBar: false}}
+).then(function() {{
     const plotDiv = document.getElementById('plot-div');
     plotDiv.on('plotly_click', function(data) {{
         if (data && data.points && data.points.length > 0) {{
@@ -148,7 +156,7 @@ function resetAxes() {{
         color: str = "#89b4fa",
         secondary_y: dict[str, Any] | None = None,
     ):
-        """Convenience method to plot a 2D line curve with markers."""
+        """Plot a 2D line curve with markers."""
         fig = go.Figure()
 
         # Primary trace
@@ -158,9 +166,9 @@ function resetAxes() {{
                 y=y,
                 mode="lines+markers",
                 name=name,
-                line=dict(color=color, width=2.5),
-                marker=dict(size=7, color=color, symbol="circle"),
-                hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:.4f}}<extra></extra>",
+                line={"color": color, "width": 2.5},
+                marker={"size": 7, "color": color, "symbol": "circle"},
+                hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:.4f}}<extra></extra>",  # noqa: E501
             )
         )
 
@@ -178,33 +186,38 @@ function resetAxes() {{
                     mode="lines+markers",
                     name=sec_name,
                     yaxis="y2",
-                    line=dict(color=sec_color, width=2, dash="dot"),
-                    marker=dict(size=6, color=sec_color, symbol="diamond"),
-                    hovertemplate=f"{x_label}: %{{x}}<br>{sec_label}: %{{y:.4f}}<extra></extra>",
+                    line={"color": sec_color, "width": 2, "dash": "dot"},
+                    marker={"size": 6, "color": sec_color, "symbol": "diamond"},
+                    hovertemplate=f"{x_label}: %{{x}}<br>{sec_label}: %{{y:.4f}}<extra></extra>",  # noqa: E501
                 )
             )
             fig.update_layout(
-                yaxis2=dict(
-                    title=sec_label,
-                    overlaying="y",
-                    side="right",
-                    gridcolor="#313244",
-                    showgrid=False,
-                )
+                yaxis2={
+                    "title": sec_label,
+                    "overlaying": "y",
+                    "side": "right",
+                    "gridcolor": "#313244",
+                    "showgrid": False,
+                }
             )
 
         fig.update_layout(
             xaxis_title=x_label,
             yaxis_title=y_label,
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-            ),
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,  # noqa: E501
+            },
         )
 
         self.plot_figure(fig)
 
     @Slot()
     def reset_axes(self):
+        """Reset plot axes."""
         self.web_view.page().runJavaScript(
             "if (typeof resetAxes === 'function') resetAxes();"
         )

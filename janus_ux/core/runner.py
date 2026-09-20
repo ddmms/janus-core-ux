@@ -11,7 +11,7 @@ from PySide6.QtCore import QThread, Signal
 
 
 class CalcRunner(QThread):
-    """Background worker thread to execute janus CLI or python commands in a chosen environment."""
+    """Background worker thread to execute janus CLI or python commands in a chosen environment."""  # noqa: E501
 
     log_line = Signal(str)
     progress = Signal(float, str)
@@ -36,6 +36,7 @@ class CalcRunner(QThread):
         self._process: subprocess.Popen | None = None
 
     def run(self):
+        """Run."""
         self._is_cancelled = False
 
         # Determine binary / invocation command based on target environment
@@ -53,7 +54,7 @@ class CalcRunner(QThread):
             full_cmd = [
                 target_py,
                 "-c",
-                "from janus_core.cli.janus import app; import sys; sys.argv=['janus'] + sys.argv[1:]; app()",
+                "from janus_core.cli.janus import app; import sys; sys.argv=['janus'] + sys.argv[1:]; app()",  # noqa: E501
                 self.command,
             ] + self.args
 

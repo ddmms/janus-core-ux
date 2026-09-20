@@ -1,4 +1,4 @@
-"""Molecular Dynamics Tab with NVE/NVT/NPT ensembles, thermodynamic curves, and trajectory playback."""
+"""Molecular Dynamics Tab with NVE/NVT/NPT ensembles, thermodynamic curves, and trajectory playback."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ from janus_ux.widgets.structure_inspector import StructureInspector
 
 
 class MDTab(QWidget):
-    """Tab for running Molecular Dynamics simulations and visualizing thermodynamic properties."""
+    """Tab for running Molecular Dynamics simulations and visualizing thermodynamic properties."""  # noqa: E501
 
     def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
@@ -124,7 +124,7 @@ class MDTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Simulation")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_md)
         btn_layout.addWidget(self.btn_run)
@@ -184,7 +184,7 @@ class MDTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
@@ -197,12 +197,13 @@ class MDTab(QWidget):
             self.inspector.load_structure(self.traj_atoms[index])
 
     def run_md(self):
+        """Run md."""
         struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running molecular dynamics.",
+                "Please upload or select an input structure file before running molecular dynamics.",  # noqa: E501
             )
             return
 
@@ -256,6 +257,7 @@ class MDTab(QWidget):
         self.runner.start()
 
     def cancel_md(self):
+        """Cancel md."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)

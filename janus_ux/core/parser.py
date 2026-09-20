@@ -25,7 +25,7 @@ def read_trajectory(filepath: str) -> list[Atoms]:
 
 
 def extract_trajectory_properties(traj: list[Atoms]) -> dict[str, dict[str, Any]]:
-    """Extract standard properties (energy, forces, volume, step) for Chemiscope and plotting."""
+    """Extract standard properties (energy, forces, volume, step) for Chemiscope and plotting."""  # noqa: E501
     if not traj:
         return {}
 
@@ -34,7 +34,7 @@ def extract_trajectory_properties(traj: list[Atoms]) -> dict[str, dict[str, Any]
     max_forces = []
     volumes = []
 
-    for i, atoms in enumerate(traj):
+    for _, atoms in enumerate(traj):
         # Potential energy
         e = None
         if "energy" in atoms.info:

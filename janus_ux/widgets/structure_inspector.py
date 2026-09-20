@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 
 class StructureInspector(QWidget):
-    """Displays chemical formula, unit cell vectors, angles, density, and atomic coordinates."""
+    """Displays chemical formula, unit cell vectors, angles, density, and atomic coordinates."""  # noqa: E501
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -126,7 +126,7 @@ class StructureInspector(QWidget):
         filter_text = self.input_filter.text().strip().lower()
 
         rows = []
-        for i, (sym, pos) in enumerate(zip(symbols, positions)):
+        for i, (sym, pos) in enumerate(zip(symbols, positions, strict=False)):
             if filter_text and filter_text not in sym.lower():
                 continue
             rows.append((i, sym, pos[0], pos[1], pos[2]))

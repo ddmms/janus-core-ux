@@ -8,6 +8,7 @@ from janus_ux.core.desktop_integration import get_asset_path, install_desktop_en
 
 
 def test_assets_exist():
+    """Test Assets exist."""
     svg_path = get_asset_path("icon.svg")
     png_path = get_asset_path("icon.png")
     desktop_path = get_asset_path("janus-core-ux.desktop")
@@ -18,6 +19,7 @@ def test_assets_exist():
 
 
 def test_install_desktop_entry():
+    """Test Install desktop entry."""
     ok = install_desktop_entry()
     assert ok is True
 

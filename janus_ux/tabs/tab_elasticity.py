@@ -1,4 +1,4 @@
-"""Elasticity Tab for calculating the 6x6 stiffness tensor C_ij, compliance, and elastic moduli."""
+"""Elasticity Tab for calculating the 6x6 stiffness tensor C_ij, compliance, and elastic moduli."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from janus_ux.core.parser import read_trajectory
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
@@ -95,7 +96,7 @@ class ElasticityTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Calculate Elasticity")
         self.btn_run.setStyleSheet(
-            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"  # noqa: E501
         )
         self.btn_run.clicked.connect(self.run_elasticity)
         btn_layout.addWidget(self.btn_run)
@@ -190,19 +191,20 @@ class ElasticityTab(QWidget):
         self.current_atoms = None
 
     def load_structure_file(self, filepath: str) -> bool:
-        """Helper to load a structure file programmatically."""
+        """Load a structure file programmatically."""
         return self.struct_input.load_file(filepath)
 
     def _browse_structure(self):
         self.struct_input.browse_file()
 
     def run_elasticity(self):
+        """Run elasticity."""
         struct_file = self.struct_input.get_filepath()
         if not struct_file or not os.path.exists(struct_file):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input periodic crystal file before running elasticity calculations.",
+                "Please upload or select an input periodic crystal file before running elasticity calculations.",  # noqa: E501
             )
             return
 
@@ -250,6 +252,7 @@ class ElasticityTab(QWidget):
         self.log_console.append_log(text)
 
     def cancel_elasticity(self):
+        """Cancel elasticity."""
         if self.runner and self.runner.isRunning():
             self.runner.cancel()
             self.btn_cancel.setEnabled(False)

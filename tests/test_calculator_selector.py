@@ -10,6 +10,7 @@ from janus_ux.widgets.calculator_selector import CalculatorSelector
 
 @pytest.fixture(scope="session")
 def qapp():
+    """Provide qapp fixture."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -17,6 +18,7 @@ def qapp():
 
 
 def test_calculator_selector_defaults(qapp):
+    """Test Calculator selector defaults."""
     selector = CalculatorSelector()
     args = selector.get_cli_args()
 
@@ -28,6 +30,7 @@ def test_calculator_selector_defaults(qapp):
 
 
 def test_calculator_selector_custom(qapp):
+    """Test Calculator selector custom."""
     selector = CalculatorSelector()
     selector.combo_arch.setCurrentText("sevennet")
     selector.combo_device.setCurrentText("cuda")

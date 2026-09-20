@@ -28,7 +28,7 @@ from janus_ux.widgets.log_console import LogConsole
 
 
 class EnvironmentsTab(QWidget):
-    """Configuration tab to manage multiple environments and install selected MLIP models."""
+    """Configuration tab to manage multiple environments and install selected MLIP models."""  # noqa: E501
 
     environments_updated = Signal()
 
@@ -157,7 +157,7 @@ class EnvironmentsTab(QWidget):
         custom_layout = QHBoxLayout()
         self.input_custom_pkg = QLineEdit()
         self.input_custom_pkg.setPlaceholderText(
-            "Or enter custom package to install via uv (e.g. torch-geometric, sevenn)..."
+            "Or enter custom package to install via uv (e.g. torch-geometric, sevenn)..."  # noqa: E501
         )
         custom_layout.addWidget(self.input_custom_pkg)
 
@@ -239,12 +239,12 @@ class EnvironmentsTab(QWidget):
         janus_status = "✅ Installed" if env.has_janus_core else "❌ Not Installed"
         color = "#a6e3a1" if env.has_janus_core else "#f38ba8"
         self.lbl_janus_status.setText(
-            f"Janus-Core: <span style='color:{color}; font-weight:bold;'>{janus_status}</span>"
+            f"Janus-Core: <span style='color:{color}; font-weight:bold;'>{janus_status}</span>"  # noqa: E501
         )
 
         # Populate MLIP Models Table
         self.table_models.setRowCount(len(MODEL_PACKAGE_MAP))
-        for row, (key, meta) in enumerate(MODEL_PACKAGE_MAP.items()):
+        for row, (_key, meta) in enumerate(MODEL_PACKAGE_MAP.items()):
             # Name
             self.table_models.setItem(row, 0, QTableWidgetItem(meta["name"]))
 
@@ -303,6 +303,7 @@ class EnvironmentsTab(QWidget):
             )
 
     def set_selected_as_default(self):
+        """Set selected as default."""
         env_name = self._get_selected_env_name()
         if env_name:
             self.env_mgr.set_default_environment(env_name)
@@ -313,6 +314,7 @@ class EnvironmentsTab(QWidget):
             )
 
     def remove_selected_env(self):
+        """Remove selected env."""
         env_name = self._get_selected_env_name()
         if env_name:
             reply = QMessageBox.question(

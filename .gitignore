@@ -42,3 +42,4 @@ htmlcov/
 janus_results/
 *.log
 *.tmp
+uv.lock

@@ -7,7 +7,8 @@ DARK_STYLESHEET = """
 QWidget {
     background-color: #1e1e2e;
     color: #cdd6f4;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 13px;
     selection-background-color: #89b4fa;
     selection-color: #11111b;

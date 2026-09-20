@@ -1,4 +1,4 @@
-"""Chemiscope 3D Atomic Structure and Trajectory Visualizer embedded in QWebEngineView."""
+"""Chemiscope 3D Atomic Structure and Trajectory Visualizer embedded in QWebEngineView."""  # noqa: E501
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from janus_ux.core.parser import extract_trajectory_properties
 
 
 class ChemiscopeWidget(QWidget):
-    """Embeds Chemiscope inside a PySide6 QWebEngineView for interactive 3D structures and linked maps."""
+    """Embeds Chemiscope inside a PySide6 QWebEngineView for interactive 3D structures and linked maps."""  # noqa: E501
 
     structure_selected = Signal(int)
 
@@ -83,9 +83,13 @@ class ChemiscopeWidget(QWidget):
     def _load_placeholder(self):
         html = """<!DOCTYPE html>
         <html>
-        <body style="background:#181825; color:#6c7086; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:90vh; margin:0;">
+        <body style="background:#181825; color:#6c7086; font-family:sans-serif;
+                     display:flex; justify-content:center; align-items:center;
+                     height:90vh; margin:0;">
             <div style="text-align:center;">
-                <h3 style="color:#89b4fa; margin-bottom:8px;">Chemiscope 3D Visualizer</h3>
+                <h3 style="color:#89b4fa; margin-bottom:8px;">
+                    Chemiscope 3D Visualizer
+                </h3>
                 <p>Select or run a calculation to visualize atomic structures.</p>
             </div>
         </body>
@@ -103,7 +107,7 @@ class ChemiscopeWidget(QWidget):
         settings: dict[str, Any] | None = None,
         mode: str | None = None,
     ):
-        """Display multiple atomic frames with interactive linked 2D/3D map and playback."""
+        """Display multiple atomic frames with interactive linked 2D/3D map and playback."""  # noqa: E501
         if not traj:
             self._load_placeholder()
             return
@@ -228,9 +232,13 @@ async function initChemiscope() {{
         const warnings = new Chemiscope.Warnings();
         warnings.addHandler(() => {{}});
         if (window.visualizerMode === 'structure') {{
-            window.vis = await Chemiscope.StructureVisualizer.load(config, window.dataset, warnings);
+            window.vis = await Chemiscope.StructureVisualizer.load(
+                config, window.dataset, warnings
+            );
         }} else {{
-            window.vis = await Chemiscope.DefaultVisualizer.load(config, window.dataset, warnings);
+            window.vis = await Chemiscope.DefaultVisualizer.load(
+                config, window.dataset, warnings
+            );
         }}
     }} catch (err) {{
         console.error("Chemiscope initialization error:", err);
@@ -252,10 +260,12 @@ window.addEventListener('DOMContentLoaded', initChemiscope);
         """Select a specific structure / frame in Chemiscope programmatically."""
         js_code = f"""
         if (window.vis) {{
-            if (window.vis.structure && typeof window.vis.structure.show === 'function') {{
-                window.vis.structure.show({index});
-            }} else if (window.vis.map && typeof window.vis.map.select === 'function') {{
-                window.vis.map.select({index});
+            const struct = window.vis.structure;
+            const map = window.vis.map;
+            if (struct && typeof struct.show === 'function') {{
+                struct.show({index});
+            }} else if (map && typeof map.select === 'function') {{
+                map.select({index});
             }}
         }}
         """
@@ -265,8 +275,11 @@ window.addEventListener('DOMContentLoaded', initChemiscope);
     def reset_camera(self):
         """Reset camera orientation."""
         js_code = """
-        if (window.vis && window.vis.structure && typeof window.vis.structure.resetCamera === 'function') {
-            window.vis.structure.resetCamera();
+        if (window.vis && window.vis.structure) {
+            const struct = window.vis.structure;
+            if (typeof struct.resetCamera === 'function') {
+                struct.resetCamera();
+            }
         }
         """
         self.web_view.page().runJavaScript(js_code)
