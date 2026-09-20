@@ -6,6 +6,11 @@ on:
       # Match semantic version tags like v0.1.0, v1.0.0a1, etc.
       - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to release (e.g. v0.1.0). If empty, defaults to v<version> from pyproject.toml"
+        required: false
+        default: ""
 
 jobs:
   test:
@@ -78,18 +83,35 @@ jobs:
           VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Check version matches tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Determine tag name
+        id: get-tag
         run: |
-          if [[ "${{ github.ref_name }}" != "v$VERSION" ]]; then
-            echo "Git tag (${{ github.ref_name }}) does not match pyproject.toml version (v$VERSION)"
+          INPUT_TAG="${{ inputs.tag }}"
+          REF_TYPE="${{ github.ref_type }}"
+          REF_NAME="${{ github.ref_name }}"
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          elif [ "$REF_TYPE" = "tag" ]; then
+            TAG="$REF_NAME"
+          else
+            TAG="v$VERSION"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Release tag: $TAG"
+
+      - name: Check version matches tag
+        run: |
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          if [[ "$TAG" != "v$VERSION" && "$TAG" != "$VERSION" && "$TAG" != "v$VERSION-"* ]]; then
+            echo "Release tag ($TAG) does not match pyproject.toml version ($VERSION)"
             exit 1
           fi
 
       - name: Check for pre-release
         id: check-prerelease
         run: |
-          if [[ "${{ github.ref_name }}" =~ (a|b|rc)[0-9]+$ ]]; then
+          TAG="${{ steps.get-tag.outputs.tag }}"
+          if [[ "$TAG" =~ (a|b|rc)[0-9]+$ ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -98,6 +120,8 @@ jobs:
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
+          tag: ${{ steps.get-tag.outputs.tag }}
+          name: ${{ steps.get-tag.outputs.tag }}
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
