@@ -1,0 +1,55 @@
+"""Tests for MainWindow and calculation tabs initialization."""
+
+import pytest
+from PySide6.QtWidgets import QApplication
+from janus_ux.app import MainWindow
+from janus_ux.tabs import (
+    GeomOptTab,
+    SinglePointTab,
+    MDTab,
+    PhononsTab,
+    EOSTab,
+    ElasticityTab,
+    NEBTab,
+    DescriptorsTab,
+)
+
+@pytest.fixture(scope="session")
+def qapp():
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    return app
+
+def test_tabs_initialization(qapp):
+    t_opt = GeomOptTab()
+    assert t_opt.combo_optimizer.count() > 0
+    assert t_opt.combo_filter.currentText() == "FrechetCellFilter"
+
+    t_sp = SinglePointTab()
+    assert t_sp.chk_energy.isChecked()
+
+    t_md = MDTab()
+    assert t_md.combo_ensemble.currentText() == "nvt"
+
+    t_ph = PhononsTab()
+    assert t_ph.sc_x.value() == 2
+
+    t_eos = EOSTab()
+    assert t_eos.spin_npoints.value() == 9
+
+    t_elast = ElasticityTab()
+    assert t_elast.table_cij.rowCount() == 6
+
+    t_neb = NEBTab()
+    assert t_neb.spin_images.value() == 5
+
+    t_desc = DescriptorsTab()
+    assert t_desc.chk_invariants.isChecked()
+
+def test_main_window(qapp):
+    win = MainWindow()
+    assert win.tab_widget.count() == 9
+    assert "Geometry Optimization" in win.tab_widget.tabText(0)
+    assert "Single Point" in win.tab_widget.tabText(1)
+    assert "Environments" in win.tab_widget.tabText(8)

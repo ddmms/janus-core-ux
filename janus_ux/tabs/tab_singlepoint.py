@@ -1,0 +1,331 @@
+"""Single Point Calculation Tab for computing energies, forces, stresses, and Hessians."""
+
+import os
+import tempfile
+from typing import Optional
+import numpy as np
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QSplitter,
+    QGroupBox,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QComboBox,
+    QCheckBox,
+    QFileDialog,
+    QMessageBox,
+    QTabWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+)
+from PySide6.QtCore import Qt, Slot
+from ase import Atoms
+import ase.io
+
+from janus_ux.core.presets import get_preset_structures
+from janus_ux.core.runner import CalcRunner
+from janus_ux.core.parser import read_trajectory
+from janus_ux.widgets.calculator_selector import CalculatorSelector
+from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
+from janus_ux.widgets.structure_inspector import StructureInspector
+from janus_ux.widgets.log_console import LogConsole
+
+class SinglePointTab(QWidget):
+    """Tab for static Single Point calculations."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.current_atoms: Optional[Atoms] = None
+        self.result_atoms: Optional[Atoms] = None
+        self.runner: Optional[CalcRunner] = None
+        self.temp_dir = tempfile.mkdtemp(prefix="janus_sp_")
+
+        self._setup_ui()
+
+    def _setup_ui(self):
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(8)
+
+        splitter = QSplitter(Qt.Horizontal)
+
+        # LEFT PANE: Controls & Properties
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(4, 4, 4, 4)
+        left_layout.setSpacing(10)
+
+        # Structure Selection
+        struct_group = QGroupBox("Input Structure")
+        sg_layout = QGridLayout(struct_group)
+        sg_layout.addWidget(QLabel("Preset Structure:"), 0, 0)
+        self.combo_preset = QComboBox()
+        self.combo_preset.addItem("-- Select Preset --")
+        self.combo_preset.addItems(list(get_preset_structures().keys()))
+        self.combo_preset.currentTextChanged.connect(self._on_preset_selected)
+        sg_layout.addWidget(self.combo_preset, 0, 1)
+
+        sg_layout.addWidget(QLabel("Or Custom File:"), 1, 0)
+        file_box = QHBoxLayout()
+        self.input_file = QLineEdit()
+        self.input_file.setPlaceholderText("Path to .cif, .xyz, .poscar")
+        file_box.addWidget(self.input_file)
+        self.btn_browse = QPushButton("Browse...")
+        self.btn_browse.clicked.connect(self._browse_structure)
+        file_box.addWidget(self.btn_browse)
+        sg_layout.addLayout(file_box, 1, 1)
+
+        left_layout.addWidget(struct_group)
+
+        # Calculator
+        self.calc_selector = CalculatorSelector(self)
+        left_layout.addWidget(self.calc_selector)
+
+        # Properties to Calculate
+        props_group = QGroupBox("Calculated Properties")
+        pg_layout = QGridLayout(props_group)
+        self.chk_energy = QCheckBox("Potential Energy")
+        self.chk_energy.setChecked(True)
+        self.chk_energy.setEnabled(False)  # Always calculated
+        pg_layout.addWidget(self.chk_energy, 0, 0)
+
+        self.chk_forces = QCheckBox("Atomic Forces")
+        self.chk_forces.setChecked(True)
+        pg_layout.addWidget(self.chk_forces, 0, 1)
+
+        self.chk_stress = QCheckBox("Stress Tensor")
+        self.chk_stress.setChecked(True)
+        pg_layout.addWidget(self.chk_stress, 1, 0)
+
+        self.chk_hessian = QCheckBox("Hessian Matrix")
+        self.chk_hessian.setChecked(False)
+        pg_layout.addWidget(self.chk_hessian, 1, 1)
+
+        left_layout.addWidget(props_group)
+
+        # Action Buttons
+        btn_layout = QHBoxLayout()
+        self.btn_run = QPushButton("Run Single Point")
+        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.clicked.connect(self.run_singlepoint)
+        btn_layout.addWidget(self.btn_run)
+
+        self.btn_cancel = QPushButton("Cancel")
+        self.btn_cancel.setEnabled(False)
+        self.btn_cancel.clicked.connect(self.cancel_singlepoint)
+        btn_layout.addWidget(self.btn_cancel)
+
+        left_layout.addLayout(btn_layout)
+        left_layout.addStretch()
+
+        splitter.addWidget(left_widget)
+
+        # RIGHT PANE: Results, 3D Chemiscope, Forces Table, Logs
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(4, 4, 4, 4)
+        right_layout.setSpacing(6)
+
+        # Tabbed displays
+        self.views_tabs = QTabWidget()
+
+        # Tab 1: Chemiscope 3D
+        self.chemiscope = ChemiscopeWidget(self, default_mode="structure")
+        self.views_tabs.addTab(self.chemiscope, "3D Atomic Structure")
+
+        # Tab 2: Results & Forces Table
+        results_widget = QWidget()
+        rw_layout = QVBoxLayout(results_widget)
+        rw_layout.setContentsMargins(4, 4, 4, 4)
+        rw_layout.setSpacing(6)
+
+        # Summary cards
+        cards_layout = QGridLayout()
+        self.lbl_energy = QLabel("Energy: - eV")
+        self.lbl_energy.setStyleSheet("font-size: 14px; font-weight: bold; color: #a6e3a1;")
+        cards_layout.addWidget(self.lbl_energy, 0, 0)
+
+        self.lbl_energy_per_atom = QLabel("Energy / Atom: - eV")
+        cards_layout.addWidget(self.lbl_energy_per_atom, 0, 1)
+
+        self.lbl_max_force = QLabel("Max Force: - eV/Å")
+        self.lbl_max_force.setStyleSheet("font-weight: bold; color: #fab387;")
+        cards_layout.addWidget(self.lbl_max_force, 1, 0)
+
+        self.lbl_pressure = QLabel("Pressure: - GPa")
+        cards_layout.addWidget(self.lbl_pressure, 1, 1)
+
+        rw_layout.addLayout(cards_layout)
+
+        # Forces table
+        self.forces_table = QTableWidget()
+        self.forces_table.setColumnCount(5)
+        self.forces_table.setHorizontalHeaderLabels(["Atom", "Symbol", "Fx (eV/Å)", "Fy (eV/Å)", "Fz (eV/Å)"])
+        self.forces_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        rw_layout.addWidget(self.forces_table, stretch=1)
+
+        self.views_tabs.addTab(results_widget, "Results & Forces")
+
+        # Tab 3: Structure Inspector
+        self.inspector = StructureInspector(self)
+        self.views_tabs.addTab(self.inspector, "Crystallography & Coordinates")
+
+        right_layout.addWidget(self.views_tabs, stretch=3)
+
+        # Bottom Log Console
+        self.log_console = LogConsole(self)
+        self.log_console.setMaximumHeight(180)
+        right_layout.addWidget(self.log_console, stretch=1)
+
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
+
+        main_layout.addWidget(splitter)
+
+    def _on_preset_selected(self, name: str):
+        presets = get_preset_structures()
+        if name in presets:
+            self.current_atoms = presets[name].copy()
+            self.inspector.load_structure(self.current_atoms)
+            self.chemiscope.load_atoms(self.current_atoms)
+            self.input_file.clear()
+
+    def _browse_structure(self):
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select Atomic Structure File", "",
+            "Structure Files (*.xyz *.cif *.poscar *.extxyz *.pdb *.json);;All Files (*)"
+        )
+        if filepath:
+            self.input_file.setText(filepath)
+            try:
+                atoms = ase.io.read(filepath)
+                self.current_atoms = atoms
+                self.inspector.load_structure(atoms)
+                self.chemiscope.load_atoms(atoms)
+                self.combo_preset.setCurrentIndex(0)
+            except Exception as e:
+                QMessageBox.critical(self, "Error Loading Structure", f"Could not read structure: {e}")
+
+    def run_singlepoint(self):
+        if self.current_atoms is None and not self.input_file.text().strip():
+            QMessageBox.warning(self, "No Structure", "Please select a preset or browse an input structure file.")
+            return
+
+        struct_file = self.input_file.text().strip()
+        if not struct_file or not os.path.exists(struct_file):
+            struct_file = os.path.join(self.temp_dir, "sp_input.xyz")
+            ase.io.write(struct_file, self.current_atoms)
+
+        file_prefix = os.path.join(self.temp_dir, "singlepoint")
+        out_file = f"{file_prefix}-results.extxyz"
+
+        # Build CLI arguments
+        args = ["--struct", struct_file, "--file-prefix", file_prefix, "--out", out_file]
+        args.extend(self.calc_selector.get_cli_args())
+
+        properties = ["energy"]
+        if self.chk_forces.isChecked():
+            properties.append("forces")
+        if self.chk_stress.isChecked():
+            properties.append("stress")
+        if self.chk_hessian.isChecked():
+            properties.append("hessian")
+
+        for prop in properties:
+            args.extend(["--property", prop])
+
+        expected = {"out_file": out_file}
+
+        self.btn_run.setEnabled(False)
+        self.btn_cancel.setEnabled(True)
+        self.log_console.clear()
+        self.log_console.append_log("[INFO] Starting single-point calculation...")
+
+        python_path = self.calc_selector.get_selected_python()
+        self.runner = CalcRunner(
+            "singlepoint",
+            args,
+            cwd=self.temp_dir,
+            expected_output_files=expected,
+            python_path=python_path,
+            parent=self,
+        )
+        self.runner.log_line.connect(self.log_console.append_log)
+        self.runner.finished_calculation.connect(self._on_singlepoint_finished)
+        self.runner.start()
+
+    def cancel_singlepoint(self):
+        if self.runner and self.runner.isRunning():
+            self.runner.cancel()
+            self.btn_cancel.setEnabled(False)
+
+    @Slot(bool, str, dict)
+    def _on_singlepoint_finished(self, success: bool, msg: str, outputs: dict):
+        self.btn_run.setEnabled(True)
+        self.btn_cancel.setEnabled(False)
+
+        if not success:
+            return
+
+        out_file = outputs.get("out_file")
+        if out_file and os.path.exists(out_file):
+            atoms_list = read_trajectory(out_file)
+            if atoms_list:
+                self.result_atoms = atoms_list[-1]
+                self._display_results(self.result_atoms)
+
+    def _display_results(self, atoms: Atoms):
+        # Update 3D Chemiscope
+        self.chemiscope.load_atoms(atoms)
+        self.inspector.load_structure(atoms)
+
+        # Energy
+        energy = atoms.info.get("energy", atoms.info.get("mace_energy", None))
+        if energy is not None:
+            self.lbl_energy.setText(f"Energy: {energy:.5f} eV")
+            self.lbl_energy_per_atom.setText(f"Energy / Atom: {energy / len(atoms):.5f} eV/atom")
+
+        # Forces
+        forces = None
+        for key in ["forces", "mace_forces"]:
+            if key in atoms.arrays:
+                forces = atoms.arrays[key]
+                break
+
+        if forces is not None:
+            max_f = np.linalg.norm(forces, axis=1).max()
+            self.lbl_max_force.setText(f"Max Force: {max_f:.5f} eV/Å")
+
+            symbols = atoms.get_chemical_symbols()
+            self.forces_table.setRowCount(len(forces))
+            for i, (sym, f) in enumerate(zip(symbols, forces)):
+                self.forces_table.setItem(i, 0, QTableWidgetItem(str(i)))
+                self.forces_table.setItem(i, 1, QTableWidgetItem(sym))
+                self.forces_table.setItem(i, 2, QTableWidgetItem(f"{f[0]:.5f}"))
+                self.forces_table.setItem(i, 3, QTableWidgetItem(f"{f[1]:.5f}"))
+                self.forces_table.setItem(i, 4, QTableWidgetItem(f"{f[2]:.5f}"))
+
+        # Stress & Pressure
+        stress = atoms.info.get("stress", None)
+        if stress is not None:
+            # Hydrostatic pressure P = -1/3 Tr(stress) in GPa (ASE units eV/Å³ -> GPa * 160.217)
+            try:
+                if len(stress) == 6:
+                    trace = (stress[0] + stress[1] + stress[2]) / 3.0
+                elif len(stress) == 9:
+                    trace = (stress[0] + stress[4] + stress[8]) / 3.0
+                else:
+                    trace = 0.0
+                p_gpa = -trace * 160.21766208
+                self.lbl_pressure.setText(f"Pressure: {p_gpa:.3f} GPa")
+            except Exception:
+                pass
+
+        self.views_tabs.setCurrentIndex(1)  # switch to Results tab
+        self.log_console.append_log("[SUCCESS] Single point calculation results loaded.")

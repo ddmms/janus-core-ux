@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "janus-core-ux"
+version = "0.1.0"
+description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemiscope 3D visualization and interactive graphs"
+authors = [{ name = "Janus UX Team" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyside6>=6.8.0",
+    "ase>=3.23.0",
+    "janus-core>=0.9.0",
+    "chemiscope>=1.0.0",
+    "plotly>=5.0.0",
+    "numpy",
+]
+
+[project.scripts]
+janus-ux = "janus_ux.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["janus_ux*"]
