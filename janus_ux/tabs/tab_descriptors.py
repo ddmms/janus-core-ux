@@ -1,44 +1,41 @@
 """Descriptors Tab for calculating and visualizing MLIP atomic and structural representations."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QComboBox,
-    QCheckBox,
-    QFileDialog,
-    QMessageBox,
-    QTabWidget,
-)
-from PySide6.QtCore import Qt, Slot
+
 from ase import Atoms
-import ase.io
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QGroupBox,
+    QHBoxLayout,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class DescriptorsTab(QWidget):
     """Tab for calculating MLIP descriptors."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_desc_")
 
         self._setup_ui()
@@ -88,7 +85,9 @@ class DescriptorsTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Compute Descriptors")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_descriptors)
         btn_layout.addWidget(self.btn_run)
 
@@ -152,7 +151,7 @@ class DescriptorsTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running descriptor calculation."
+                "Please upload or select an input structure file before running descriptor calculation.",
             )
             return
 
@@ -160,9 +159,12 @@ class DescriptorsTab(QWidget):
         out_file = f"{file_prefix}-desc.extxyz"
 
         args = [
-            "--struct", struct_file,
-            "--file-prefix", file_prefix,
-            "--out", out_file,
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--out",
+            out_file,
         ]
         if self.chk_invariants.isChecked():
             args.append("--invariants-only")
@@ -206,4 +208,6 @@ class DescriptorsTab(QWidget):
         self.btn_run.setEnabled(True)
         self.btn_cancel.setEnabled(False)
         if success:
-            self.log_console.append_log("[SUCCESS] MLIP descriptors calculated and saved.")
+            self.log_console.append_log(
+                "[SUCCESS] MLIP descriptors calculated and saved."
+            )

@@ -1,17 +1,17 @@
 """Tests for trajectory, properties, and stats parsing."""
 
-import os
-import tempfile
-import numpy as np
-import pytest
+from __future__ import annotations
+
 import ase.build
 import ase.io
+import numpy as np
 
 from janus_ux.core.parser import (
-    read_trajectory,
     extract_trajectory_properties,
     parse_md_stats,
+    read_trajectory,
 )
+
 
 def test_read_trajectory(tmp_path):
     atoms1 = ase.build.bulk("Cu", "fcc", a=3.6, cubic=True)
@@ -23,6 +23,7 @@ def test_read_trajectory(tmp_path):
     assert len(loaded) == 2
     assert np.isclose(loaded[0].cell.lengths()[0], 3.6)
     assert np.isclose(loaded[1].cell.lengths()[0], 3.7)
+
 
 def test_extract_trajectory_properties():
     atoms = ase.build.bulk("Si", "diamond", a=5.43)
@@ -36,6 +37,7 @@ def test_extract_trajectory_properties():
     assert "Max Force" in props
     assert props["Max Force"]["values"] == [0.0]
     assert "Volume" in props
+
 
 def test_parse_md_stats(tmp_path):
     stats_file = tmp_path / "stats.dat"

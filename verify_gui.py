@@ -1,10 +1,15 @@
 """Headless / Display verification script that renders MainWindow and saves a screenshot."""
 
+from __future__ import annotations
+
 import os
 import sys
-from PySide6.QtWidgets import QApplication
+
 from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication
+
 from janus_ux.app import MainWindow
+
 
 def run_verification():
     app = QApplication.instance() or QApplication(sys.argv)
@@ -12,8 +17,8 @@ def run_verification():
     win.resize(1380, 890)
     win.show()
 
-    # Switch to Environments tab
-    win.tab_widget.setCurrentIndex(8)
+    # Show main window with tabs
+    win.tab_widget.setCurrentIndex(0)
 
     def capture_and_quit():
         pixmap = win.grab()
@@ -25,6 +30,7 @@ def run_verification():
 
     QTimer.singleShot(1500, capture_and_quit)
     app.exec()
+
 
 if __name__ == "__main__":
     run_verification()

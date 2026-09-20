@@ -1,5 +1,7 @@
 """Modern dark styling and CSS tokens for Janus Core UX."""
 
+from __future__ import annotations
+
 DARK_STYLESHEET = """
 /* Global Window & Font */
 QWidget {

@@ -1,33 +1,37 @@
 """Main Application Window for Janus Core UX."""
 
-import sys
-from PySide6.QtWidgets import (
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QTabWidget,
-    QMenuBar,
-    QMenu,
-    QStatusBar,
-    QMessageBox,
-    QFileDialog,
-)
-from PySide6.QtGui import QAction, QIcon
-from PySide6.QtCore import Qt
+from __future__ import annotations
 
-from janus_ux.theme import DARK_STYLESHEET
-from janus_ux.widgets.calculator_selector import CalculatorSelector
+import os
+
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QIcon, QPixmap
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QStatusBar,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from janus_ux.core.desktop_integration import get_asset_path
 from janus_ux.tabs import (
-    SinglePointTab,
+    DescriptorsTab,
+    ElasticityTab,
+    EnvironmentsTab,
+    EOSTab,
     GeomOptTab,
     MDTab,
-    PhononsTab,
-    EOSTab,
-    ElasticityTab,
     NEBTab,
-    DescriptorsTab,
-    EnvironmentsTab,
+    PhononsTab,
+    SinglePointTab,
 )
+from janus_ux.theme import DARK_STYLESHEET
+from janus_ux.widgets.calculator_selector import CalculatorSelector
+
 
 class MainWindow(QMainWindow):
     """Main window hosting all Janus-Core calculation tabs and environment management."""
@@ -40,6 +44,13 @@ class MainWindow(QMainWindow):
 
         # Apply global theme
         self.setStyleSheet(DARK_STYLESHEET)
+
+        # Set Window Icon to Janus-Core official logo
+        logo_path = get_asset_path("janus-core.png")
+        if not os.path.exists(logo_path):
+            logo_path = get_asset_path("icon.png")
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
 
         self._setup_menus()
         self._setup_tabs()
@@ -78,7 +89,9 @@ class MainWindow(QMainWindow):
         ]
         for name, idx in options:
             act = QAction(name, self)
-            act.triggered.connect(lambda checked=False, i=idx: self.tab_widget.setCurrentIndex(i))
+            act.triggered.connect(
+                lambda checked=False, i=idx: self.tab_widget.setCurrentIndex(i)
+            )
             calc_menu.addAction(act)
 
         # Help Menu
@@ -98,42 +111,97 @@ class MainWindow(QMainWindow):
         # Global CalculatorSelector shared across all calculation modes
         self.calc_selector = CalculatorSelector(
             self,
-            title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)"
+            title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",
         )
 
         self.tab_widget = QTabWidget(self)
         self.tab_widget.setDocumentMode(True)
+        self.tab_widget.setIconSize(QSize(18, 18))
 
         # Instantiate tabs sharing the single global calc_selector
         self.tab_geomopt = GeomOptTab(parent=self, calc_selector=self.calc_selector)
-        self.tab_singlepoint = SinglePointTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_singlepoint = SinglePointTab(
+            parent=self, calc_selector=self.calc_selector
+        )
         self.tab_md = MDTab(parent=self, calc_selector=self.calc_selector)
         self.tab_phonons = PhononsTab(parent=self, calc_selector=self.calc_selector)
         self.tab_eos = EOSTab(parent=self, calc_selector=self.calc_selector)
-        self.tab_elasticity = ElasticityTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_elasticity = ElasticityTab(
+            parent=self, calc_selector=self.calc_selector
+        )
         self.tab_neb = NEBTab(parent=self, calc_selector=self.calc_selector)
-        self.tab_descriptors = DescriptorsTab(parent=self, calc_selector=self.calc_selector)
+        self.tab_descriptors = DescriptorsTab(
+            parent=self, calc_selector=self.calc_selector
+        )
         self.tab_environments = EnvironmentsTab(parent=self)
 
-        # Add tabs
-        self.tab_widget.addTab(self.tab_geomopt, "⚡ Geometry Optimization")
-        self.tab_widget.addTab(self.tab_singlepoint, "🎯 Single Point")
-        self.tab_widget.addTab(self.tab_md, "🌊 Molecular Dynamics")
-        self.tab_widget.addTab(self.tab_phonons, "🎵 Phonons")
-        self.tab_widget.addTab(self.tab_eos, "📈 Equation of State")
-        self.tab_widget.addTab(self.tab_elasticity, "💎 Elasticity")
-        self.tab_widget.addTab(self.tab_neb, "⛰️ NEB Pathways")
-        self.tab_widget.addTab(self.tab_descriptors, "🧬 Descriptors")
-        self.tab_widget.addTab(self.tab_environments, "⚙️ MLIP Environments")
+        # Helper to load tab QIcon
+        def _tab_icon(name: str) -> QIcon:
+            icon_file = get_asset_path(f"tabs/{name}.svg")
+            return QIcon(icon_file) if os.path.exists(icon_file) else QIcon()
+
+        # Add tabs with explicit QIcon and clean text
+        self.tab_widget.addTab(
+            self.tab_geomopt, _tab_icon("geomopt"), "Geometry Optimization"
+        )
+        self.tab_widget.addTab(
+            self.tab_singlepoint, _tab_icon("singlepoint"), "Single Point"
+        )
+        self.tab_widget.addTab(self.tab_md, _tab_icon("md"), "Molecular Dynamics")
+        self.tab_widget.addTab(self.tab_phonons, _tab_icon("phonons"), "Phonons")
+        self.tab_widget.addTab(self.tab_eos, _tab_icon("eos"), "Equation of State")
+        self.tab_widget.addTab(
+            self.tab_elasticity, _tab_icon("elasticity"), "Elasticity"
+        )
+        self.tab_widget.addTab(self.tab_neb, _tab_icon("neb"), "NEB Pathways")
+        self.tab_widget.addTab(
+            self.tab_descriptors, _tab_icon("descriptors"), "Descriptors"
+        )
+        self.tab_widget.addTab(
+            self.tab_environments, _tab_icon("environments"), "MLIP Environments"
+        )
 
         # Connect environment update signal to the global CalculatorSelector
-        self.tab_environments.environments_updated.connect(self._on_environments_updated)
+        self.tab_environments.environments_updated.connect(
+            self._on_environments_updated
+        )
 
-        # Central container: Shared CalculatorSelector on top, tab widget below
+        # Central container: Branding Header + Shared CalculatorSelector + Tabs
         container = QWidget(self)
         c_layout = QVBoxLayout(container)
         c_layout.setContentsMargins(8, 6, 8, 6)
         c_layout.setSpacing(6)
+
+        # Brand header with Janus-Core logo
+        header = QWidget(container)
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(4, 2, 4, 2)
+        h_layout.setSpacing(10)
+
+        logo_path = get_asset_path("janus-core.png")
+        if not os.path.exists(logo_path):
+            logo_path = get_asset_path("icon.png")
+        if os.path.exists(logo_path):
+            logo_lbl = QLabel(header)
+            pix = QPixmap(logo_path).scaledToHeight(28, Qt.SmoothTransformation)
+            logo_lbl.setPixmap(pix)
+            h_layout.addWidget(logo_lbl)
+
+        brand_title = QLabel(
+            "<b>JANUS-CORE</b> <span style='color: #89b4fa; font-weight: normal;'>UX</span>",
+            header,
+        )
+        brand_title.setStyleSheet("font-size: 15px; color: #cdd6f4;")
+        h_layout.addWidget(brand_title)
+
+        brand_sub = QLabel(
+            "— Atomistic Machine Learning Interatomic Potentials Suite", header
+        )
+        brand_sub.setStyleSheet("font-size: 12px; color: #6c7086;")
+        h_layout.addWidget(brand_sub)
+        h_layout.addStretch()
+
+        c_layout.addWidget(header)
         c_layout.addWidget(self.calc_selector)
         c_layout.addWidget(self.tab_widget)
         self.setCentralWidget(container)
@@ -145,7 +213,9 @@ class MainWindow(QMainWindow):
 
     def _setup_statusbar(self):
         status = QStatusBar(self)
-        status.showMessage("Janus-Core UX Ready | Multi-Environment MLIP Support Active")
+        status.showMessage(
+            "Janus-Core UX Ready | Multi-Environment MLIP Support Active"
+        )
         self.setStatusBar(status)
 
     def _open_structure(self):
@@ -157,24 +227,37 @@ class MainWindow(QMainWindow):
 
     def _install_desktop_shortcut(self):
         from janus_ux.core.desktop_integration import install_desktop_entry
+
         try:
             ok = install_desktop_entry()
             if ok:
                 QMessageBox.information(
                     self,
                     "Desktop Shortcut Installed",
-                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop)."
+                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop).",
                 )
             else:
-                QMessageBox.warning(self, "Installation Failed", "Could not install desktop shortcut.")
+                QMessageBox.warning(
+                    self, "Installation Failed", "Could not install desktop shortcut."
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to install desktop shortcut: {e}")
+            QMessageBox.critical(
+                self, "Error", f"Failed to install desktop shortcut: {e}"
+            )
 
     def _show_about(self):
-        QMessageBox.about(
-            self,
-            "About Janus-Core UX",
-            "<h3>Janus-Core Desktop UX</h3>"
+        msg = QMessageBox(self)
+        msg.setWindowTitle("About Janus-Core UX")
+        logo_path = get_asset_path("janus-core.png")
+        if not os.path.exists(logo_path):
+            logo_path = get_asset_path("icon.png")
+        if os.path.exists(logo_path):
+            pix = QPixmap(logo_path).scaled(
+                80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            msg.setIconPixmap(pix)
+        msg.setText("<h3>Janus-Core Desktop UX</h3>")
+        msg.setInformativeText(
             "<p>A graphical user interface for <b>STFC janus-core</b> built with <b>Qt6 & PySide6</b>.</p>"
             "<p><b>Features:</b></p>"
             "<ul>"
@@ -185,3 +268,4 @@ class MainWindow(QMainWindow):
             "<li>Support for MACE, SevenNet, CHGNet, FairChem, NequIP, ORB, and MatterSim</li>"
             "</ul>"
         )
+        msg.exec()

@@ -1,20 +1,26 @@
 """Desktop entry and icon installation helper for Linux desktop integration."""
 
+from __future__ import annotations
+
 import os
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
+
 
 def get_asset_path(filename: str) -> str:
     """Return path to an asset bundled in janus_ux/assets."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, "assets", filename)
 
+
 def install_desktop_entry() -> bool:
     """Install .desktop file and application icons to standard XDG directories."""
     home = Path.home()
     app_dir = home / ".local" / "share" / "applications"
-    icon_scalable_dir = home / ".local" / "share" / "icons" / "hicolor" / "scalable" / "apps"
+    icon_scalable_dir = (
+        home / ".local" / "share" / "icons" / "hicolor" / "scalable" / "apps"
+    )
     icon_png_dir = home / ".local" / "share" / "icons" / "hicolor" / "256x256" / "apps"
 
     app_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +39,7 @@ def install_desktop_entry() -> bool:
 
     # 2. Prepare and copy .desktop file
     if os.path.exists(desktop_src):
-        content = open(desktop_src, "r", encoding="utf-8").read()
+        content = open(desktop_src, encoding="utf-8").read()
 
         # Find executable path if possible
         which_bin = shutil.which("janus-core-ux")
@@ -49,7 +55,9 @@ def install_desktop_entry() -> bool:
 
     # 3. Update desktop database if available
     try:
-        subprocess.run(["update-desktop-database", str(app_dir)], check=False, capture_output=True)
+        subprocess.run(
+            ["update-desktop-database", str(app_dir)], check=False, capture_output=True
+        )
     except Exception:
         pass
 

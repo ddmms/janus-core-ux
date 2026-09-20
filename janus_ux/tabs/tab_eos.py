@@ -1,50 +1,49 @@
 """Equation of State (EOS) Tab for computing E(V) curves, Bulk modulus, and strained cells."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional, List
+
+from ase import Atoms
 import numpy as np
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
     QComboBox,
     QDoubleSpinBox,
-    QSpinBox,
-    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
     QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Slot
-from ase import Atoms
-import ase.io
-import plotly.graph_objects as go
 
+from janus_ux.core.parser import extract_trajectory_properties, read_trajectory
 from janus_ux.core.runner import CalcRunner
-from janus_ux.core.parser import read_trajectory, extract_trajectory_properties
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class EOSTab(QWidget):
     """Tab for Equation of State calculations."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.strained_atoms: List[Atoms] = []
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.strained_atoms: list[Atoms] = []
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_eos_")
 
         self._setup_ui()
@@ -63,7 +62,9 @@ class EOSTab(QWidget):
         left_layout.setSpacing(8)
 
         # Structure File Input
-        self.struct_input = StructureFileInput("Input Periodic Crystal File", require_periodic=True, parent=self)
+        self.struct_input = StructureFileInput(
+            "Input Periodic Crystal File", require_periodic=True, parent=self
+        )
         self.struct_input.structure_loaded.connect(self._on_structure_loaded)
         self.struct_input.structure_cleared.connect(self._on_structure_cleared)
         self.input_file = self.struct_input.input_file
@@ -107,7 +108,9 @@ class EOSTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Calculate EOS")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_eos)
         btn_layout.addWidget(self.btn_run)
 
@@ -136,7 +139,9 @@ class EOSTab(QWidget):
         # Tab 2: Interactive E(V) Graph
         self.graph_eos = InteractiveGraph(self, title="Energy vs Volume E(V) Curve")
         self.graph_eos.point_clicked.connect(self._on_volume_point_clicked)
-        self.views_tabs.addTab(self.graph_eos, "E(V) Equation of State Curve (Click to View Structure)")
+        self.views_tabs.addTab(
+            self.graph_eos, "E(V) Equation of State Curve (Click to View Structure)"
+        )
 
         # Tab 3: Structure Inspector
         self.inspector = StructureInspector(self)
@@ -175,7 +180,9 @@ class EOSTab(QWidget):
         if self.strained_atoms and 0 <= index < len(self.strained_atoms):
             self.chemiscope.select_frame(index)
             self.inspector.load_structure(self.strained_atoms[index])
-            self.log_console.append_log(f"[INFO] Selected strained volume frame {index}")
+            self.log_console.append_log(
+                f"[INFO] Selected strained volume frame {index}"
+            )
 
     def run_eos(self):
         struct_file = self.struct_input.get_filepath()
@@ -183,7 +190,7 @@ class EOSTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input periodic crystal file before running Equation of State calculations."
+                "Please upload or select an input periodic crystal file before running Equation of State calculations.",
             )
             return
 
@@ -201,12 +208,18 @@ class EOSTab(QWidget):
             max_v = round(1.0 + max_v, 4)
 
         args = [
-            "--struct", struct_file,
-            "--file-prefix", file_prefix,
-            "--min-volume", str(min_v),
-            "--max-volume", str(max_v),
-            "--n-volumes", str(self.spin_npoints.value()),
-            "--eos-type", self.combo_eos_type.currentText(),
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--min-volume",
+            str(min_v),
+            "--max-volume",
+            str(max_v),
+            "--n-volumes",
+            str(self.spin_npoints.value()),
+            "--eos-type",
+            self.combo_eos_type.currentText(),
             "--write-structures",
         ]
         args.extend(self.calc_selector.get_cli_args())
@@ -266,9 +279,11 @@ class EOSTab(QWidget):
                 # Load into Chemiscope
                 settings = {
                     "map": {"x": {"property": "Volume"}, "y": {"property": "Energy"}},
-                    "structure": [{"unitCell": True, "bonds": True}]
+                    "structure": [{"unitCell": True, "bonds": True}],
                 }
-                self.chemiscope.load_trajectory(self.strained_atoms, properties=props, settings=settings)
+                self.chemiscope.load_trajectory(
+                    self.strained_atoms, properties=props, settings=settings
+                )
 
                 # Plot E(V) curve
                 if vols and energies:
@@ -285,18 +300,30 @@ class EOSTab(QWidget):
                         name="E(V) Strain Points",
                         color="#89b4fa",
                     )
-                self.log_console.append_log(f"[SUCCESS] Calculated EOS across {len(self.strained_atoms)} strained unit cells.")
+                self.log_console.append_log(
+                    f"[SUCCESS] Calculated EOS across {len(self.strained_atoms)} strained unit cells."
+                )
 
         # Also display fit results if available
         fit_dat = outputs.get("fit_dat") or f"{file_prefix}-eos-fit.dat"
         if os.path.exists(fit_dat):
             try:
-                with open(fit_dat, "r") as f:
-                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                with open(fit_dat) as f:
+                    lines = [
+                        line.strip()
+                        for line in f
+                        if line.strip() and not line.startswith("#")
+                    ]
                     if lines:
                         parts = lines[0].split()
                         if len(parts) >= 3:
-                            b0, e0, v0 = float(parts[0]), float(parts[1]), float(parts[2])
-                            self.log_console.append_log(f"[EOS FIT] B0: {b0:.2f} GPa | E0: {e0:.4f} eV | V0: {v0:.2f} Å³")
+                            b0, e0, v0 = (
+                                float(parts[0]),
+                                float(parts[1]),
+                                float(parts[2]),
+                            )
+                            self.log_console.append_log(
+                                f"[EOS FIT] B0: {b0:.2f} GPa | E0: {e0:.4f} eV | V0: {v0:.2f} Å³"
+                            )
             except Exception:
                 pass

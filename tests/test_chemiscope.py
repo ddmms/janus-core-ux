@@ -1,10 +1,14 @@
 """Tests for Chemiscope dataset formatting and widget functionality."""
 
-import pytest
+from __future__ import annotations
+
 import ase.build
+from PySide6.QtWidgets import QApplication
+import pytest
+
 from janus_ux.core.parser import extract_trajectory_properties
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
-from PySide6.QtWidgets import QApplication
+
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -12,6 +16,7 @@ def qapp():
     if app is None:
         app = QApplication([])
     return app
+
 
 def test_extract_properties():
     atoms1 = ase.build.bulk("Si", "diamond", a=5.43)
@@ -27,6 +32,7 @@ def test_extract_properties():
     assert "Energy" in props
     assert props["Energy"]["values"] == [-10.5, -10.2]
     assert "Volume" in props
+
 
 def test_chemiscope_widget_init(qapp):
     widget = ChemiscopeWidget()

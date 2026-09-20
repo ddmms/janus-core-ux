@@ -1,24 +1,26 @@
 """Chemiscope 3D Atomic Structure and Trajectory Visualizer embedded in QWebEngineView."""
 
-import os
+from __future__ import annotations
+
 import json
+import os
 import tempfile
-from typing import List, Dict, Any, Optional
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QComboBox,
-    QProgressBar,
-)
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtCore import QUrl, Signal, Slot
+from typing import Any
+
 from ase import Atoms
 import chemiscope
+from PySide6.QtCore import QUrl, Signal, Slot
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from janus_ux.core.parser import extract_trajectory_properties
+
 
 class ChemiscopeWidget(QWidget):
     """Embeds Chemiscope inside a PySide6 QWebEngineView for interactive 3D structures and linked maps."""
@@ -27,9 +29,13 @@ class ChemiscopeWidget(QWidget):
 
     def __init__(self, parent=None, default_mode: str = "default"):
         super().__init__(parent)
-        self.default_mode = default_mode  # "default" (map + struct) or "structure" (3D only)
-        self.current_structures: List[Atoms] = []
-        self._temp_html_path = os.path.join(tempfile.gettempdir(), f"chemiscope_{id(self)}.html")
+        self.default_mode = (
+            default_mode  # "default" (map + struct) or "structure" (3D only)
+        )
+        self.current_structures: list[Atoms] = []
+        self._temp_html_path = os.path.join(
+            tempfile.gettempdir(), f"chemiscope_{id(self)}.html"
+        )
 
         # Static assets
         chemiscope_pkg = os.path.dirname(chemiscope.__file__)
@@ -86,16 +92,16 @@ class ChemiscopeWidget(QWidget):
         </html>"""
         self.web_view.setHtml(html)
 
-    def load_atoms(self, atoms: Atoms, properties: Optional[Dict[str, Any]] = None):
+    def load_atoms(self, atoms: Atoms, properties: dict[str, Any] | None = None):
         """Display a single atomic structure in 3D Structure mode."""
         self.load_trajectory([atoms], properties=properties, mode="structure")
 
     def load_trajectory(
         self,
-        traj: List[Atoms],
-        properties: Optional[Dict[str, Any]] = None,
-        settings: Optional[Dict[str, Any]] = None,
-        mode: Optional[str] = None,
+        traj: list[Atoms],
+        properties: dict[str, Any] | None = None,
+        settings: dict[str, Any] | None = None,
+        mode: str | None = None,
     ):
         """Display multiple atomic frames with interactive linked 2D/3D map and playback."""
         if not traj:
@@ -106,7 +112,9 @@ class ChemiscopeWidget(QWidget):
         n_frames = len(traj)
         mode = mode or ("structure" if n_frames == 1 else "default")
 
-        self.status_label.setText(f"{n_frames} configuration{'s' if n_frames > 1 else ''}")
+        self.status_label.setText(
+            f"{n_frames} configuration{'s' if n_frames > 1 else ''}"
+        )
 
         # Extract properties if not provided
         if properties is None:
@@ -145,7 +153,11 @@ class ChemiscopeWidget(QWidget):
 
     def _render_chemiscope_html(self, dataset_json: str, mode: str):
         """Write and load the Chemiscope container HTML into the QWebEngineView."""
-        css_content = open(self.css_path, "r", encoding="utf-8").read() if os.path.exists(self.css_path) else ""
+        css_content = (
+            open(self.css_path, encoding="utf-8").read()
+            if os.path.exists(self.css_path)
+            else ""
+        )
 
         html = f"""<!DOCTYPE html>
 <html>
@@ -195,8 +207,8 @@ html, body {{
 <body>
 <div class="chemiscope-sphinx">
     <div class="visualizer-container">
-        {'<div id="chsp-map"></div>' if mode == 'default' else ''}
-        <div id="chsp-struct" style="{'flex:1;' if mode == 'structure' else ''}"></div>
+        {'<div id="chsp-map"></div>' if mode == "default" else ""}
+        <div id="chsp-struct" style="{"flex:1;" if mode == "structure" else ""}"></div>
         <div id="chsp-info"></div>
         <div id="chsp-meta"></div>
     </div>

@@ -1,48 +1,46 @@
 """Phonons Tab for calculating phonon dispersions, density of states (DOS), and thermal properties."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QComboBox,
-    QDoubleSpinBox,
-    QSpinBox,
-    QCheckBox,
-    QFileDialog,
-    QMessageBox,
-    QTabWidget,
-)
-from PySide6.QtCore import Qt, Slot
+
 from ase import Atoms
-import ase.io
-import plotly.graph_objects as go
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class PhononsTab(QWidget):
     """Tab for Phonon calculations and vibrational thermodynamics."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_phonons_")
 
         self._setup_ui()
@@ -61,7 +59,9 @@ class PhononsTab(QWidget):
         left_layout.setSpacing(8)
 
         # Structure File Input
-        self.struct_input = StructureFileInput("Input Periodic Structure File", require_periodic=True, parent=self)
+        self.struct_input = StructureFileInput(
+            "Input Periodic Structure File", require_periodic=True, parent=self
+        )
         self.struct_input.structure_loaded.connect(self._on_structure_loaded)
         self.struct_input.structure_cleared.connect(self._on_structure_cleared)
         self.input_file = self.struct_input.input_file
@@ -102,7 +102,9 @@ class PhononsTab(QWidget):
         self.chk_dos.setChecked(True)
         pg_layout.addWidget(self.chk_dos, 2, 0, 1, 2)
 
-        self.chk_thermal = QCheckBox("Calculate Thermal Properties (Cv, Entropy, Free Energy)")
+        self.chk_thermal = QCheckBox(
+            "Calculate Thermal Properties (Cv, Entropy, Free Energy)"
+        )
         self.chk_thermal.setChecked(True)
         pg_layout.addWidget(self.chk_thermal, 3, 0, 1, 2)
 
@@ -111,7 +113,9 @@ class PhononsTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Calculate Phonons")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_phonons)
         btn_layout.addWidget(self.btn_run)
 
@@ -179,7 +183,7 @@ class PhononsTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input periodic crystal file before running phonon calculations."
+                "Please upload or select an input periodic crystal file before running phonon calculations.",
             )
             return
 
@@ -188,10 +192,14 @@ class PhononsTab(QWidget):
         sc_matrix = f"{self.sc_x.value()} {self.sc_y.value()} {self.sc_z.value()}"
 
         args = [
-            "--struct", struct_file,
-            "--file-prefix", file_prefix,
-            "--supercell", sc_matrix,
-            "--displacement", str(self.spin_displacement.value()),
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--supercell",
+            sc_matrix,
+            "--displacement",
+            str(self.spin_displacement.value()),
         ]
         if self.chk_dos.isChecked():
             args.append("--dos")
@@ -206,7 +214,9 @@ class PhononsTab(QWidget):
         self.log_console.append_log("[INFO] Calculating Phonons and force constants...")
 
         python_path = self.calc_selector.get_selected_python()
-        self.runner = CalcRunner("phonons", args, cwd=self.temp_dir, python_path=python_path, parent=self)
+        self.runner = CalcRunner(
+            "phonons", args, cwd=self.temp_dir, python_path=python_path, parent=self
+        )
         self.runner.log_line.connect(self.log_console.append_log)
         self.runner.finished_calculation.connect(self._on_phonons_finished)
         self.runner.start()
@@ -221,4 +231,6 @@ class PhononsTab(QWidget):
         self.btn_run.setEnabled(True)
         self.btn_cancel.setEnabled(False)
         if success:
-            self.log_console.append_log("[SUCCESS] Phonon calculation completed successfully.")
+            self.log_console.append_log(
+                "[SUCCESS] Phonon calculation completed successfully."
+            )

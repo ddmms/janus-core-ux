@@ -1,8 +1,12 @@
 """Tests for CalculatorSelector widget."""
 
-import pytest
+from __future__ import annotations
+
 from PySide6.QtWidgets import QApplication
+import pytest
+
 from janus_ux.widgets.calculator_selector import CalculatorSelector
+
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -10,6 +14,7 @@ def qapp():
     if app is None:
         app = QApplication([])
     return app
+
 
 def test_calculator_selector_defaults(qapp):
     selector = CalculatorSelector()
@@ -20,6 +25,7 @@ def test_calculator_selector_defaults(qapp):
     assert "--device" in args
     assert "cpu" in args
     assert "--no-tracker" in args  # Default per user rule
+
 
 def test_calculator_selector_custom(qapp):
     selector = CalculatorSelector()

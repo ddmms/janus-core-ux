@@ -1,49 +1,46 @@
 """Elasticity Tab for calculating the 6x6 stiffness tensor C_ij, compliance, and elastic moduli."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional
-import numpy as np
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QComboBox,
-    QDoubleSpinBox,
-    QSpinBox,
-    QFileDialog,
-    QMessageBox,
-    QTabWidget,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-)
-from PySide6.QtCore import Qt, Slot
+
 from ase import Atoms
-import ase.io
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import (
+    QDoubleSpinBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QTableWidget,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class ElasticityTab(QWidget):
     """Tab for full 6x6 elasticity stiffness matrix and moduli calculation."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_elast_")
 
         self._setup_ui()
@@ -62,7 +59,9 @@ class ElasticityTab(QWidget):
         left_layout.setSpacing(8)
 
         # Structure File Input
-        self.struct_input = StructureFileInput("Input Periodic Crystal File", require_periodic=True, parent=self)
+        self.struct_input = StructureFileInput(
+            "Input Periodic Crystal File", require_periodic=True, parent=self
+        )
         self.struct_input.structure_loaded.connect(self._on_structure_loaded)
         self.struct_input.structure_cleared.connect(self._on_structure_cleared)
         self.input_file = self.struct_input.input_file
@@ -95,7 +94,9 @@ class ElasticityTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Calculate Elasticity")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_elasticity)
         btn_layout.addWidget(self.btn_run)
 
@@ -150,7 +151,9 @@ class ElasticityTab(QWidget):
         self.table_cij = QTableWidget(6, 6)
         headers = ["C_1j", "C_2j", "C_3j", "C_4j", "C_5j", "C_6j"]
         self.table_cij.setHorizontalHeaderLabels(headers)
-        self.table_cij.setVerticalHeaderLabels(["C_i1", "C_i2", "C_i3", "C_i4", "C_i5", "C_i6"])
+        self.table_cij.setVerticalHeaderLabels(
+            ["C_i1", "C_i2", "C_i3", "C_i4", "C_i5", "C_i6"]
+        )
         self.table_cij.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         m_layout.addWidget(self.table_cij)
         rw_layout.addWidget(matrix_group, stretch=1)
@@ -199,7 +202,7 @@ class ElasticityTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input periodic crystal file before running elasticity calculations."
+                "Please upload or select an input periodic crystal file before running elasticity calculations.",
             )
             return
 
@@ -207,11 +210,16 @@ class ElasticityTab(QWidget):
         tensor_file = f"{file_prefix}-elastic_tensor.dat"
 
         args = [
-            "--struct", struct_file,
-            "--file-prefix", file_prefix,
-            "--shear-magnitude", str(self.spin_strain.value()),
-            "--normal-magnitude", str(self.spin_strain.value()),
-            "--n-strains", str(self.spin_npoints.value()),
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--shear-magnitude",
+            str(self.spin_strain.value()),
+            "--normal-magnitude",
+            str(self.spin_strain.value()),
+            "--n-strains",
+            str(self.spin_npoints.value()),
             "--write-structures",
         ]
         args.extend(self.calc_selector.get_cli_args())
@@ -221,7 +229,9 @@ class ElasticityTab(QWidget):
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
         self.log_console.clear()
-        self.log_console.append_log("[INFO] Calculating Elastic Stiffness Tensor C_ij...")
+        self.log_console.append_log(
+            "[INFO] Calculating Elastic Stiffness Tensor C_ij..."
+        )
 
         python_path = self.calc_selector.get_selected_python()
         self.runner = CalcRunner(
@@ -255,8 +265,12 @@ class ElasticityTab(QWidget):
         tensor_file = outputs.get("tensor_file") or f"{file_prefix}-elastic_tensor.dat"
         if os.path.exists(tensor_file):
             try:
-                with open(tensor_file, "r") as f:
-                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                with open(tensor_file) as f:
+                    lines = [
+                        line.strip()
+                        for line in f
+                        if line.strip() and not line.startswith("#")
+                    ]
                     if lines:
                         vals = [float(x) for x in lines[0].split()]
                         if len(vals) >= 9:
@@ -272,10 +286,13 @@ class ElasticityTab(QWidget):
                         if len(vals) >= 45:
                             cij_vals = vals[9:45]
                             from PySide6.QtWidgets import QTableWidgetItem
+
                             for r in range(6):
                                 for c in range(6):
                                     v = cij_vals[r * 6 + c]
-                                    self.table_cij.setItem(r, c, QTableWidgetItem(f"{v:.2f}"))
+                                    self.table_cij.setItem(
+                                        r, c, QTableWidgetItem(f"{v:.2f}")
+                                    )
             except Exception as e:
                 self.log_console.append_log(f"[WARN] Failed parsing tensor file: {e}")
 

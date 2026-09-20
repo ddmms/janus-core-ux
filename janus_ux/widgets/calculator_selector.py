@@ -1,29 +1,34 @@
 """MLIP Calculator selection, device configuration, and execution environment selector."""
 
-from typing import List, Optional
+from __future__ import annotations
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
     QGridLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
-    QComboBox,
     QLineEdit,
-    QCheckBox,
     QPushButton,
-    QFileDialog,
 )
-from PySide6.QtCore import Signal
-from janus_ux.core.models import SUPPORTED_ARCHITECTURES, DEFAULT_MODELS
-from janus_ux.core.env_manager import EnvironmentManager, EnvConfig, MODEL_PACKAGE_MAP
+
+from janus_ux.core.env_manager import EnvConfig, EnvironmentManager
+from janus_ux.core.models import DEFAULT_MODELS, SUPPORTED_ARCHITECTURES
+
 
 class CalculatorSelector(QGroupBox):
     """Configuration panel for MLIP Architecture, Model weights, Device, and Target Environment."""
 
     selection_changed = Signal()
 
-    def __init__(self, parent=None, title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)"):
+    def __init__(
+        self,
+        parent=None,
+        title="⚙️ Global MLIP Potential & Target Environment (Applied to all calculation modes)",
+    ):
         super().__init__(title, parent)
         self.env_mgr = EnvironmentManager()
         self._setup_ui()
@@ -39,7 +44,9 @@ class CalculatorSelector(QGroupBox):
         env_box = QHBoxLayout()
         env_box.setSpacing(6)
         self.combo_env = QComboBox()
-        self.combo_env.setToolTip("Select the environment containing the desired MLIP model")
+        self.combo_env.setToolTip(
+            "Select the environment containing the desired MLIP model"
+        )
         self.combo_env.currentTextChanged.connect(self._on_env_changed)
         env_box.addWidget(self.combo_env)
 
@@ -57,7 +64,9 @@ class CalculatorSelector(QGroupBox):
         grid.addWidget(QLabel("Compute Device:"), 0, 4)
         self.combo_device = QComboBox()
         self.combo_device.addItems(["cpu", "cuda", "mps", "xpu"])
-        self.combo_device.currentTextChanged.connect(lambda: self.selection_changed.emit())
+        self.combo_device.currentTextChanged.connect(
+            lambda: self.selection_changed.emit()
+        )
         grid.addWidget(self.combo_device, 0, 5)
 
         # Row 1: Model weights / path and Options
@@ -65,7 +74,9 @@ class CalculatorSelector(QGroupBox):
         model_layout = QHBoxLayout()
         model_layout.setContentsMargins(0, 0, 0, 0)
         self.input_model = QLineEdit()
-        self.input_model.setPlaceholderText("Leave empty for default foundational model")
+        self.input_model.setPlaceholderText(
+            "Leave empty for default foundational model"
+        )
         self.input_model.textChanged.connect(lambda: self.selection_changed.emit())
         model_layout.addWidget(self.input_model)
 
@@ -82,7 +93,9 @@ class CalculatorSelector(QGroupBox):
 
         self.chk_tracker = QCheckBox("Track Carbon")
         self.chk_tracker.setChecked(False)  # User rule: default no-tracker
-        self.chk_tracker.setToolTip("Track emissions with CodeCarbon (disabled by default to prevent overhead)")
+        self.chk_tracker.setToolTip(
+            "Track emissions with CodeCarbon (disabled by default to prevent overhead)"
+        )
         self.chk_tracker.toggled.connect(lambda: self.selection_changed.emit())
         options_layout.addWidget(self.chk_tracker)
         grid.addLayout(options_layout, 1, 4, 1, 2)
@@ -151,28 +164,33 @@ class CalculatorSelector(QGroupBox):
 
     def _browse_model(self):
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Select MLIP Model Weights", "", "Model Files (*.model *.pt *.pth *.pt.tar);;All Files (*)"
+            self,
+            "Select MLIP Model Weights",
+            "",
+            "Model Files (*.model *.pt *.pth *.pt.tar);;All Files (*)",
         )
         if filename:
             self.input_model.setText(filename)
 
-    def get_selected_env(self) -> Optional[EnvConfig]:
+    def get_selected_env(self) -> EnvConfig | None:
         """Return the EnvConfig object for the currently selected environment."""
         env_name = self.combo_env.currentData()
         if env_name:
             return self.env_mgr.get_environment(env_name)
         return self.env_mgr.get_default_environment()
 
-    def get_selected_python(self) -> Optional[str]:
+    def get_selected_python(self) -> str | None:
         """Return python path of the selected environment."""
         env = self.get_selected_env()
         return env.python_path if env else None
 
-    def get_cli_args(self) -> List[str]:
+    def get_cli_args(self) -> list[str]:
         """Generate CLI flags for janus command line execution."""
         args = [
-            "--arch", self.combo_arch.currentText(),
-            "--device", self.combo_device.currentText(),
+            "--arch",
+            self.combo_arch.currentText(),
+            "--device",
+            self.combo_device.currentText(),
         ]
 
         model = self.input_model.text().strip()

@@ -1,18 +1,22 @@
 """Tests for MainWindow and calculation tabs initialization."""
 
-import pytest
+from __future__ import annotations
+
 from PySide6.QtWidgets import QApplication
+import pytest
+
 from janus_ux.app import MainWindow
 from janus_ux.tabs import (
-    GeomOptTab,
-    SinglePointTab,
-    MDTab,
-    PhononsTab,
-    EOSTab,
-    ElasticityTab,
-    NEBTab,
     DescriptorsTab,
+    ElasticityTab,
+    EOSTab,
+    GeomOptTab,
+    MDTab,
+    NEBTab,
+    PhononsTab,
+    SinglePointTab,
 )
+
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -20,6 +24,7 @@ def qapp():
     if app is None:
         app = QApplication([])
     return app
+
 
 def test_tabs_initialization(qapp):
     t_opt = GeomOptTab()
@@ -47,6 +52,7 @@ def test_tabs_initialization(qapp):
     t_desc = DescriptorsTab()
     assert t_desc.chk_invariants.isChecked()
 
+
 def test_main_window(qapp):
     win = MainWindow()
     assert win.tab_widget.count() == 9
@@ -73,11 +79,18 @@ def test_main_window(qapp):
     assert "--arch" in cli_args
     assert "sevennet" in cli_args
 
+
 def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
     t_sp = SinglePointTab()
     from ase import Atoms
     import ase.io
-    atoms = Atoms("Si2", positions=[[0, 0, 0], [1.36, 1.36, 1.36]], cell=[5.43, 5.43, 5.43], pbc=True)
+
+    atoms = Atoms(
+        "Si2",
+        positions=[[0, 0, 0], [1.36, 1.36, 1.36]],
+        cell=[5.43, 5.43, 5.43],
+        pbc=True,
+    )
     test_file = tmp_path / "si.xyz"
     ase.io.write(str(test_file), atoms)
 
@@ -87,10 +100,13 @@ def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
 
     captured_args = []
     from janus_ux.core.runner import CalcRunner
+
     orig_init = CalcRunner.__init__
+
     def fake_init(self, command, args, **kwargs):
         captured_args.extend(args)
         orig_init(self, command, args, **kwargs)
+
     monkeypatch.setattr(CalcRunner, "__init__", fake_init)
     monkeypatch.setattr(CalcRunner, "start", lambda self: None)
 

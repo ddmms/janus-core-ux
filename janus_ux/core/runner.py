@@ -1,11 +1,14 @@
 """Asynchronous calculation runner for Janus Core operations using QThread."""
 
+from __future__ import annotations
+
 import os
-import sys
 import subprocess
+import sys
 import tempfile
-from typing import Dict, Any, List, Optional
+
 from PySide6.QtCore import QThread, Signal
+
 
 class CalcRunner(QThread):
     """Background worker thread to execute janus CLI or python commands in a chosen environment."""
@@ -17,10 +20,10 @@ class CalcRunner(QThread):
     def __init__(
         self,
         command: str,
-        args: List[str],
-        cwd: Optional[str] = None,
-        expected_output_files: Optional[Dict[str, str]] = None,
-        python_path: Optional[str] = None,
+        args: list[str],
+        cwd: str | None = None,
+        expected_output_files: dict[str, str] | None = None,
+        python_path: str | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -30,7 +33,7 @@ class CalcRunner(QThread):
         self.expected_output_files = expected_output_files or {}
         self.python_path = python_path
         self._is_cancelled = False
-        self._process: Optional[subprocess.Popen] = None
+        self._process: subprocess.Popen | None = None
 
     def run(self):
         self._is_cancelled = False
@@ -98,7 +101,9 @@ class CalcRunner(QThread):
                     True, "Completed successfully", self.expected_output_files
                 )
             else:
-                self.log_line.emit(f"[ERROR] Process exited with error code {return_code}")
+                self.log_line.emit(
+                    f"[ERROR] Process exited with error code {return_code}"
+                )
                 self.finished_calculation.emit(
                     False, f"Exited with code {return_code}", {}
                 )

@@ -1,52 +1,54 @@
 """Molecular Dynamics Tab with NVE/NVT/NPT ensembles, thermodynamic curves, and trajectory playback."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional, List
+
+from ase import Atoms
 import numpy as np
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
     QComboBox,
     QDoubleSpinBox,
-    QSpinBox,
-    QCheckBox,
-    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
     QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Slot
-from ase import Atoms
-import ase.io
-import plotly.graph_objects as go
 
+from janus_ux.core.parser import (
+    extract_trajectory_properties,
+    parse_md_stats,
+    read_trajectory,
+)
 from janus_ux.core.runner import CalcRunner
-from janus_ux.core.parser import read_trajectory, parse_md_stats, extract_trajectory_properties
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class MDTab(QWidget):
     """Tab for running Molecular Dynamics simulations and visualizing thermodynamic properties."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.traj_atoms: List[Atoms] = []
+        self.current_atoms: Atoms | None = None
+        self.traj_atoms: list[Atoms] = []
         self.stats_data: dict = {}
-        self.runner: Optional[CalcRunner] = None
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_md_")
 
         self._setup_ui()
@@ -121,7 +123,9 @@ class MDTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Simulation")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_md)
         btn_layout.addWidget(self.btn_run)
 
@@ -150,7 +154,9 @@ class MDTab(QWidget):
         # Tab 2: Temperature & Energy Plots
         self.graph_temp = InteractiveGraph(self, title="Temperature vs Simulation Time")
         self.graph_temp.point_clicked.connect(self._on_time_point_clicked)
-        self.views_tabs.addTab(self.graph_temp, "Temperature & Energy (Click to View Structure)")
+        self.views_tabs.addTab(
+            self.graph_temp, "Temperature & Energy (Click to View Structure)"
+        )
 
         # Tab 3: Structure Inspector
         self.inspector = StructureInspector(self)
@@ -196,7 +202,7 @@ class MDTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running molecular dynamics."
+                "Please upload or select an input structure file before running molecular dynamics.",
             )
             return
 
@@ -205,15 +211,24 @@ class MDTab(QWidget):
         stats_file = f"{file_prefix}-stats.dat"
 
         args = [
-            "--struct", struct_file,
-            "--file-prefix", file_prefix,
-            "--ensemble", self.combo_ensemble.currentText(),
-            "--temp", str(self.spin_temp.value()),
-            "--timestep", str(self.spin_timestep.value()),
-            "--steps", str(self.spin_steps.value()),
-            "--traj-every", str(self.spin_traj_every.value()),
-            "--traj-file", traj_file,
-            "--stats-file", stats_file,
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--ensemble",
+            self.combo_ensemble.currentText(),
+            "--temp",
+            str(self.spin_temp.value()),
+            "--timestep",
+            str(self.spin_timestep.value()),
+            "--steps",
+            str(self.spin_steps.value()),
+            "--traj-every",
+            str(self.spin_traj_every.value()),
+            "--traj-file",
+            traj_file,
+            "--stats-file",
+            stats_file,
         ]
         args.extend(self.calc_selector.get_cli_args())
 
@@ -265,7 +280,10 @@ class MDTab(QWidget):
         if stats_file and os.path.exists(stats_file):
             self.stats_data = parse_md_stats(stats_file)
             if self.stats_data:
-                time_fs = self.stats_data.get("Timeps", self.stats_data.get("time", np.arange(len(self.traj_atoms))))
+                time_fs = self.stats_data.get(
+                    "Timeps",
+                    self.stats_data.get("time", np.arange(len(self.traj_atoms))),
+                )
                 temp_k = self.stats_data.get("TempK", self.stats_data.get("temp", []))
                 epot = self.stats_data.get("Epot", self.stats_data.get("epot", []))
 
@@ -288,4 +306,6 @@ class MDTab(QWidget):
                         color="#fab387",
                         secondary_y=sec_y,
                     )
-        self.log_console.append_log("[SUCCESS] Molecular Dynamics trajectory and statistics rendered.")
+        self.log_console.append_log(
+            "[SUCCESS] Molecular Dynamics trajectory and statistics rendered."
+        )

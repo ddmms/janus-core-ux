@@ -1,6 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.10,<0.11"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "janus_ux"
+module-root = ""
 
 [project]
 name = "janus-core-ux"
@@ -36,6 +40,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-qt>=4.4.0",
+    "ruff>=0.8.0",
 ]
 
 [project.urls]
@@ -46,9 +51,44 @@ Documentation = "https://context7.com/stfc/janus-core"
 [project.scripts]
 janus-core-ux = "janus_ux.main:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["janus_ux*"]
+[tool.ruff]
+exclude = ["conf.py", "*ipynb", "containers/assets/tutorials/*.py"]
+target-version = "py311"
 
-[tool.setuptools.package-data]
-"janus_ux" = ["assets/*"]
+[tool.ruff.lint]
+# Ignore complexity
+ignore = ["C901"]
+select = [
+    # flake8-bugbear
+    "B",
+    # pylint
+    "C", "R",
+    # pydocstyle
+    "D",
+    # pycodestyle
+    "E", "W",
+    # Pyflakes
+    "F", "FA",
+    # pyupgrade
+    "I",
+    # pep8-naming
+    "N",
+    # isort
+    "UP",
+]
+[tool.ruff.lint.per-file-ignores]
+'containers/*.py' = ['D100', 'E501']
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = false
+

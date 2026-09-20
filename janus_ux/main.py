@@ -1,20 +1,25 @@
 """CLI Entrypoint for launching Janus Core UX."""
 
-import sys
+from __future__ import annotations
+
 import os
-from PySide6.QtWidgets import QApplication
+import sys
+
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
 from janus_ux.app import MainWindow
-from janus_ux.core.desktop_integration import install_desktop_entry, get_asset_path
+from janus_ux.core.desktop_integration import get_asset_path, install_desktop_entry
+
 
 def main():
     """Launch the Janus Core desktop UX or handle CLI options."""
     if "--install-desktop" in sys.argv:
         success = install_desktop_entry()
         if success:
-            print("Desktop icon and .desktop shortcut installed successfully to ~/.local/share/applications!")
+            print(
+                "Desktop icon and .desktop shortcut installed successfully to ~/.local/share/applications!"
+            )
             sys.exit(0)
         else:
             print("Failed to install desktop shortcut.")
@@ -44,6 +49,7 @@ def main():
     window.show()
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

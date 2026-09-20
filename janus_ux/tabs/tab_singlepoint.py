@@ -1,50 +1,49 @@
 """Single Point Calculation Tab for computing energies, forces, stresses, and Hessians."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional
+
+from ase import Atoms
 import numpy as np
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QComboBox,
     QCheckBox,
-    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
     QMessageBox,
-    QTabWidget,
+    QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Slot
-from ase import Atoms
-import ase.io
 
-from janus_ux.core.runner import CalcRunner
 from janus_ux.core.parser import read_trajectory
+from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class SinglePointTab(QWidget):
     """Tab for static Single Point calculations."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.result_atoms: Optional[Atoms] = None
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.result_atoms: Atoms | None = None
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_sp_")
 
         self._setup_ui()
@@ -98,7 +97,9 @@ class SinglePointTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Single Point")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_singlepoint)
         btn_layout.addWidget(self.btn_run)
 
@@ -134,7 +135,9 @@ class SinglePointTab(QWidget):
         # Summary cards
         cards_layout = QGridLayout()
         self.lbl_energy = QLabel("Energy: - eV")
-        self.lbl_energy.setStyleSheet("font-size: 14px; font-weight: bold; color: #a6e3a1;")
+        self.lbl_energy.setStyleSheet(
+            "font-size: 14px; font-weight: bold; color: #a6e3a1;"
+        )
         cards_layout.addWidget(self.lbl_energy, 0, 0)
 
         self.lbl_energy_per_atom = QLabel("Energy / Atom: - eV")
@@ -152,7 +155,9 @@ class SinglePointTab(QWidget):
         # Forces table
         self.forces_table = QTableWidget()
         self.forces_table.setColumnCount(5)
-        self.forces_table.setHorizontalHeaderLabels(["Atom", "Symbol", "Fx (eV/Å)", "Fy (eV/Å)", "Fz (eV/Å)"])
+        self.forces_table.setHorizontalHeaderLabels(
+            ["Atom", "Symbol", "Fx (eV/Å)", "Fy (eV/Å)", "Fz (eV/Å)"]
+        )
         self.forces_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         rw_layout.addWidget(self.forces_table, stretch=1)
 
@@ -196,7 +201,7 @@ class SinglePointTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running single point calculation."
+                "Please upload or select an input structure file before running single point calculation.",
             )
             return
 
@@ -204,7 +209,14 @@ class SinglePointTab(QWidget):
         out_file = f"{file_prefix}-results.extxyz"
 
         # Build CLI arguments
-        args = ["--struct", struct_file, "--file-prefix", file_prefix, "--out", out_file]
+        args = [
+            "--struct",
+            struct_file,
+            "--file-prefix",
+            file_prefix,
+            "--out",
+            out_file,
+        ]
         args.extend(self.calc_selector.get_cli_args())
 
         properties = ["energy"]
@@ -275,7 +287,9 @@ class SinglePointTab(QWidget):
 
         if energy is not None:
             self.lbl_energy.setText(f"Energy: {energy:.5f} eV")
-            self.lbl_energy_per_atom.setText(f"Energy / Atom: {energy / len(atoms):.5f} eV/atom")
+            self.lbl_energy_per_atom.setText(
+                f"Energy / Atom: {energy / len(atoms):.5f} eV/atom"
+            )
 
         # Forces
         forces = None
@@ -329,4 +343,6 @@ class SinglePointTab(QWidget):
                 pass
 
         self.views_tabs.setCurrentIndex(1)  # switch to Results tab
-        self.log_console.append_log("[SUCCESS] Single point calculation results loaded.")
+        self.log_console.append_log(
+            "[SUCCESS] Single point calculation results loaded."
+        )

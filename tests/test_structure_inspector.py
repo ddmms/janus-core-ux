@@ -1,9 +1,13 @@
 """Tests for StructureInspector widget."""
 
-import pytest
+from __future__ import annotations
+
 import ase.build
 from PySide6.QtWidgets import QApplication
+import pytest
+
 from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -12,6 +16,7 @@ def qapp():
         app = QApplication([])
     return app
 
+
 def test_structure_inspector_load(qapp):
     inspector = StructureInspector()
     atoms = ase.build.bulk("Si", "diamond", a=5.43)
@@ -19,6 +24,7 @@ def test_structure_inspector_load(qapp):
 
     assert "Si2" in inspector.lbl_formula.text()
     assert inspector.table.rowCount() == 2
+
 
 def test_structure_inspector_filter(qapp):
     inspector = StructureInspector()

@@ -1,50 +1,49 @@
 """Geometry Optimization Tab with interactive convergence curves and linked 3D Chemiscope viewer."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional, List
-import numpy as np
+
+from ase import Atoms
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
+    QCheckBox,
     QComboBox,
     QDoubleSpinBox,
-    QSpinBox,
-    QCheckBox,
-    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
     QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Slot
-from ase import Atoms
-import ase.io
 
+from janus_ux.core.parser import extract_trajectory_properties, read_trajectory
 from janus_ux.core.runner import CalcRunner
-from janus_ux.core.parser import read_trajectory, extract_trajectory_properties
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
-from janus_ux.widgets.structure_inspector import StructureInspector
-from janus_ux.widgets.structure_file_input import StructureFileInput
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_file_input import StructureFileInput
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class GeomOptTab(QWidget):
     """Tab for Geometry Optimization and Cell Relaxation."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.current_atoms: Optional[Atoms] = None
-        self.traj_atoms: List[Atoms] = []
-        self.runner: Optional[CalcRunner] = None
+        self.current_atoms: Atoms | None = None
+        self.traj_atoms: list[Atoms] = []
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_geomopt_")
 
         self._setup_ui()
@@ -101,17 +100,23 @@ class GeomOptTab(QWidget):
         # Cell Optimization & Filter (User rule: prefer FrechetCellFilter)
         og_layout.addWidget(QLabel("Cell Relaxation:"), 3, 0)
         self.combo_cell_opt = QComboBox()
-        self.combo_cell_opt.addItems([
-            "Positions Only (Fixed Cell)",
-            "Optimize Cell Fully (Vectors + Angles)",
-            "Optimize Cell Lengths Only",
-        ])
+        self.combo_cell_opt.addItems(
+            [
+                "Positions Only (Fixed Cell)",
+                "Optimize Cell Fully (Vectors + Angles)",
+                "Optimize Cell Lengths Only",
+            ]
+        )
         og_layout.addWidget(self.combo_cell_opt, 3, 1)
 
         og_layout.addWidget(QLabel("Cell Filter:"), 4, 0)
         self.combo_filter = QComboBox()
-        self.combo_filter.addItems(["FrechetCellFilter", "ExpCellFilter", "UnitCellFilter"])
-        self.combo_filter.setToolTip("FrechetCellFilter provides stable metric convergence for crystal optimizations.")
+        self.combo_filter.addItems(
+            ["FrechetCellFilter", "ExpCellFilter", "UnitCellFilter"]
+        )
+        self.combo_filter.setToolTip(
+            "FrechetCellFilter provides stable metric convergence for crystal optimizations."
+        )
         og_layout.addWidget(self.combo_filter, 4, 1)
 
         self.chk_symmetrize = QCheckBox("Refine Spacegroup Symmetry")
@@ -128,7 +133,9 @@ class GeomOptTab(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run Optimization")
         self.btn_run.setProperty("class", "primary")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_optimization)
         btn_layout.addWidget(self.btn_run)
 
@@ -158,7 +165,9 @@ class GeomOptTab(QWidget):
         # Tab 2: Interactive Convergence Graph
         self.graph = InteractiveGraph(self, title="Optimization Convergence Curve")
         self.graph.point_clicked.connect(self._on_graph_point_clicked)
-        self.views_tabs.addTab(self.graph, "Convergence Graph (Click to View Structure)")
+        self.views_tabs.addTab(
+            self.graph, "Convergence Graph (Click to View Structure)"
+        )
 
         # Tab 3: Structure Inspector
         self.inspector = StructureInspector(self)
@@ -207,7 +216,7 @@ class GeomOptTab(QWidget):
             QMessageBox.warning(
                 self,
                 "No Structure File",
-                "Please upload or select an input structure file before running geometry optimization."
+                "Please upload or select an input structure file before running geometry optimization.",
             )
             return
 
@@ -306,12 +315,16 @@ class GeomOptTab(QWidget):
 
             # Load into Interactive Graph
             if energies:
-                sec_y = {
-                    "name": "Max Force",
-                    "values": max_forces,
-                    "color": "#f38ba8",
-                    "label": "Max Force (eV/Å)",
-                } if max_forces else None
+                sec_y = (
+                    {
+                        "name": "Max Force",
+                        "values": max_forces,
+                        "color": "#f38ba8",
+                        "label": "Max Force (eV/Å)",
+                    }
+                    if max_forces
+                    else None
+                )
 
                 self.graph.plot_curve(
                     x=steps,
@@ -325,4 +338,6 @@ class GeomOptTab(QWidget):
 
             # Update inspector with final structure
             self.inspector.load_structure(self.traj_atoms[-1])
-            self.log_console.append_log(f"[SUCCESS] Loaded {len(self.traj_atoms)} frames from optimization trajectory.")
+            self.log_console.append_log(
+                f"[SUCCESS] Loaded {len(self.traj_atoms)} frames from optimization trajectory."
+            )

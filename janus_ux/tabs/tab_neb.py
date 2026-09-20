@@ -1,50 +1,52 @@
 """Nudged Elastic Band (NEB) Tab for transition state search and activation energy barriers."""
 
+from __future__ import annotations
+
 import os
 import tempfile
-from typing import Optional, List
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QSplitter,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QComboBox,
-    QDoubleSpinBox,
-    QSpinBox,
-    QCheckBox,
-    QFileDialog,
-    QMessageBox,
-    QTabWidget,
-)
-from PySide6.QtCore import Qt, Slot
+
 from ase import Atoms
 import ase.io
-import plotly.graph_objects as go
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
+from janus_ux.core.parser import extract_trajectory_properties, read_trajectory
 from janus_ux.core.runner import CalcRunner
-from janus_ux.core.parser import read_trajectory, extract_trajectory_properties
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
 from janus_ux.widgets.interactive_graph import InteractiveGraph
-from janus_ux.widgets.structure_inspector import StructureInspector
 from janus_ux.widgets.log_console import LogConsole
+from janus_ux.widgets.structure_inspector import StructureInspector
+
 
 class NEBTab(QWidget):
     """Tab for CI-NEB minimum energy path calculations and reaction barrier determination."""
 
-    def __init__(self, parent=None, calc_selector: Optional[CalculatorSelector] = None):
+    def __init__(self, parent=None, calc_selector: CalculatorSelector | None = None):
         super().__init__(parent)
         self.is_standalone = calc_selector is None
         self.calc_selector = calc_selector or CalculatorSelector(self)
-        self.init_atoms: Optional[Atoms] = None
-        self.final_atoms: Optional[Atoms] = None
-        self.neb_images: List[Atoms] = []
-        self.runner: Optional[CalcRunner] = None
+        self.init_atoms: Atoms | None = None
+        self.final_atoms: Atoms | None = None
+        self.neb_images: list[Atoms] = []
+        self.runner: CalcRunner | None = None
         self.temp_dir = tempfile.mkdtemp(prefix="janus_neb_")
 
         self._setup_ui()
@@ -122,7 +124,9 @@ class NEBTab(QWidget):
 
         self.chk_climb = QCheckBox("Climbing Image (CI-NEB)")
         self.chk_climb.setChecked(True)
-        self.chk_climb.setToolTip("Climbing image forces the highest energy replica to converge to the exact saddle point.")
+        self.chk_climb.setToolTip(
+            "Climbing image forces the highest energy replica to converge to the exact saddle point."
+        )
         ng_layout.addWidget(self.chk_climb, 4, 0, 1, 2)
 
         left_layout.addWidget(neb_group)
@@ -130,7 +134,9 @@ class NEBTab(QWidget):
         # Action Buttons
         btn_layout = QHBoxLayout()
         self.btn_run = QPushButton("Run NEB Simulation")
-        self.btn_run.setStyleSheet("background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;")
+        self.btn_run.setStyleSheet(
+            "background-color: #89b4fa; color: #11111b; font-weight: bold; padding: 10px;"
+        )
         self.btn_run.clicked.connect(self.run_neb)
         btn_layout.addWidget(self.btn_run)
 
@@ -159,7 +165,10 @@ class NEBTab(QWidget):
         # Tab 2: Interactive MEP Curve
         self.graph_neb = InteractiveGraph(self, title="Minimum Energy Path (MEP)")
         self.graph_neb.point_clicked.connect(self._on_neb_point_clicked)
-        self.views_tabs.addTab(self.graph_neb, "Energy Profile Along Reaction Coordinate (Click to View Image)")
+        self.views_tabs.addTab(
+            self.graph_neb,
+            "Energy Profile Along Reaction Coordinate (Click to View Image)",
+        )
 
         # Tab 3: Structure Inspector
         self.inspector = StructureInspector(self)
@@ -180,7 +189,10 @@ class NEBTab(QWidget):
 
     def _browse_init(self):
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select Initial Structure File", "", "Structure Files (*.xyz *.cif *.poscar *.extxyz);;All Files (*)"
+            self,
+            "Select Initial Structure File",
+            "",
+            "Structure Files (*.xyz *.cif *.poscar *.extxyz);;All Files (*)",
         )
         if filepath:
             self.input_init.setText(filepath)
@@ -194,7 +206,10 @@ class NEBTab(QWidget):
 
     def _browse_final(self):
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select Final Structure File", "", "Structure Files (*.xyz *.cif *.poscar *.extxyz);;All Files (*)"
+            self,
+            "Select Final Structure File",
+            "",
+            "Structure Files (*.xyz *.cif *.poscar *.extxyz);;All Files (*)",
         )
         if filepath:
             self.input_final.setText(filepath)
@@ -213,8 +228,17 @@ class NEBTab(QWidget):
     def run_neb(self):
         init_file = self.input_init.text().strip()
         final_file = self.input_final.text().strip()
-        if not init_file or not os.path.exists(init_file) or not final_file or not os.path.exists(final_file):
-            QMessageBox.warning(self, "Input Required", "Please specify valid initial and final structure files.")
+        if (
+            not init_file
+            or not os.path.exists(init_file)
+            or not final_file
+            or not os.path.exists(final_file)
+        ):
+            QMessageBox.warning(
+                self,
+                "Input Required",
+                "Please specify valid initial and final structure files.",
+            )
             return
 
         file_prefix = os.path.join(self.temp_dir, "neb")
@@ -222,12 +246,18 @@ class NEBTab(QWidget):
         results_file = f"{file_prefix}-neb-results.dat"
 
         args = [
-            "--init-struct", init_file,
-            "--final-struct", final_file,
-            "--file-prefix", file_prefix,
-            "--n-images", str(self.spin_images.value()),
-            "--fmax", str(self.spin_fmax.value()),
-            "--steps", str(self.spin_steps.value()),
+            "--init-struct",
+            init_file,
+            "--final-struct",
+            final_file,
+            "--file-prefix",
+            file_prefix,
+            "--n-images",
+            str(self.spin_images.value()),
+            "--fmax",
+            str(self.spin_fmax.value()),
+            "--steps",
+            str(self.spin_steps.value()),
             "--write-band",
         ]
         if self.chk_climb.isChecked():
@@ -300,18 +330,28 @@ class NEBTab(QWidget):
                         color="#f38ba8",
                     )
                     barrier = max(rel_energies)
-                    self.log_console.append_log(f"[SUCCESS] NEB calculation converged! Activation Energy Barrier: {barrier:.4f} eV")
+                    self.log_console.append_log(
+                        f"[SUCCESS] NEB calculation converged! Activation Energy Barrier: {barrier:.4f} eV"
+                    )
 
         # Parse barrier results from results dat file
         results_file = outputs.get("results_file") or f"{file_prefix}-neb-results.dat"
         if os.path.exists(results_file):
             try:
-                with open(results_file, "r") as f:
-                    lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                with open(results_file) as f:
+                    lines = [
+                        line.strip()
+                        for line in f
+                        if line.strip() and not line.startswith("#")
+                    ]
                     if lines:
                         parts = lines[0].split()
                         if len(parts) >= 3:
-                            barr, delta_e, max_f = float(parts[0]), float(parts[1]), float(parts[2])
+                            barr, delta_e, max_f = (
+                                float(parts[0]),
+                                float(parts[1]),
+                                float(parts[2]),
+                            )
                             self.log_console.append_log(
                                 f"[NEB RESULT] Activation Barrier: {barr:.4f} eV | ΔE: {delta_e:.4f} eV | Max Force: {max_f:.4f} eV/Å"
                             )

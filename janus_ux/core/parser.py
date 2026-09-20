@@ -1,12 +1,16 @@
 """Parsers for Janus Core outputs, trajectories, and statistics."""
 
-import os
-from typing import List, Dict, Any, Optional, Tuple
-import numpy as np
-import ase.io
-from ase import Atoms
+from __future__ import annotations
 
-def read_trajectory(filepath: str) -> List[Atoms]:
+import os
+from typing import Any
+
+from ase import Atoms
+import ase.io
+import numpy as np
+
+
+def read_trajectory(filepath: str) -> list[Atoms]:
     """Read all frames from an ASE-compatible structure or trajectory file."""
     if not os.path.exists(filepath):
         return []
@@ -19,7 +23,8 @@ def read_trajectory(filepath: str) -> List[Atoms]:
         except Exception:
             return []
 
-def extract_trajectory_properties(traj: List[Atoms]) -> Dict[str, Dict[str, Any]]:
+
+def extract_trajectory_properties(traj: list[Atoms]) -> dict[str, dict[str, Any]]:
     """Extract standard properties (energy, forces, volume, step) for Chemiscope and plotting."""
     if not traj:
         return {}
@@ -94,7 +99,8 @@ def extract_trajectory_properties(traj: List[Atoms]) -> Dict[str, Dict[str, Any]
 
     return props
 
-def parse_md_stats(stats_path: str) -> Dict[str, np.ndarray]:
+
+def parse_md_stats(stats_path: str) -> dict[str, np.ndarray]:
     """Parse thermodynamic statistics from an MD stats file."""
     if not os.path.exists(stats_path):
         return {}

@@ -1,17 +1,20 @@
 """Real-time log console widget with colorized output and search filtering."""
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTextEdit,
-    QPushButton,
-    QCheckBox,
-    QLineEdit,
-    QLabel,
-)
-from PySide6.QtGui import QTextCursor, QColor
+from __future__ import annotations
+
 from PySide6.QtCore import Slot
+from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 class LogConsole(QWidget):
     """Terminal-like log viewer widget."""
@@ -72,9 +75,15 @@ class LogConsole(QWidget):
         self._all_lines.append(text)
 
         color_hex = "#cdd6f4"
-        if "[SUCCESS]" in text or "complete" in text.lower() or "converged" in text.lower():
+        if (
+            "[SUCCESS]" in text
+            or "complete" in text.lower()
+            or "converged" in text.lower()
+        ):
             color_hex = "#a6e3a1"  # green
-        elif "[ERROR]" in text or "error" in text.lower() or "traceback" in text.lower():
+        elif (
+            "[ERROR]" in text or "error" in text.lower() or "traceback" in text.lower()
+        ):
             color_hex = "#f38ba8"  # red
         elif "[WARNING]" in text or "warn" in text.lower():
             color_hex = "#fab387"  # peach

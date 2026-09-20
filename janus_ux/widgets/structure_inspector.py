@@ -1,28 +1,28 @@
 """Structure Inspector Widget displaying atomic and unit cell properties."""
 
-from typing import Optional
-import numpy as np
+from __future__ import annotations
+
+from ase import Atoms
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
     QGridLayout,
     QGroupBox,
+    QHeaderView,
     QLabel,
+    QLineEdit,
     QTableWidget,
     QTableWidgetItem,
-    QLineEdit,
-    QHeaderView,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt
-from ase import Atoms
+
 
 class StructureInspector(QWidget):
     """Displays chemical formula, unit cell vectors, angles, density, and atomic coordinates."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._current_atoms: Optional[Atoms] = None
+        self._current_atoms: Atoms | None = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -70,14 +70,16 @@ class StructureInspector(QWidget):
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Index", "Element", "X (Å)", "Y (Å)", "Z (Å)"])
+        self.table.setHorizontalHeaderLabels(
+            ["Index", "Element", "X (Å)", "Y (Å)", "Z (Å)"]
+        )
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         t_layout.addWidget(self.table)
 
         layout.addWidget(table_group, stretch=1)
 
-    def load_structure(self, atoms: Optional[Atoms]):
+    def load_structure(self, atoms: Atoms | None):
         """Populate the inspector with details from an ASE Atoms object."""
         self._current_atoms = atoms
         if atoms is None:
@@ -104,7 +106,9 @@ class StructureInspector(QWidget):
             alpha, beta, gamma = cell.angles()
             vol = atoms.get_volume()
             self.lbl_lengths.setText(f"Cell: a={a:.2f}, b={b:.2f}, c={c:.2f} Å")
-            self.lbl_angles.setText(f"Angles: α={alpha:.1f}°, β={beta:.1f}°, γ={gamma:.1f}°")
+            self.lbl_angles.setText(
+                f"Angles: α={alpha:.1f}°, β={beta:.1f}°, γ={gamma:.1f}°"
+            )
             self.lbl_volume.setText(f"Volume: {vol:.2f} Å³")
         else:
             self.lbl_lengths.setText("Cell: Non-periodic")

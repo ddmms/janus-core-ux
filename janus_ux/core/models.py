@@ -1,8 +1,8 @@
 """Supported MLIP architectures and default foundational models for STFC janus-core."""
 
-from typing import Dict, List
+from __future__ import annotations
 
-SUPPORTED_ARCHITECTURES: List[str] = [
+SUPPORTED_ARCHITECTURES: list[str] = [
     "mace_mp",
     "mace",
     "sevennet",
@@ -15,7 +15,7 @@ SUPPORTED_ARCHITECTURES: List[str] = [
     "fairchem",
 ]
 
-DEFAULT_MODELS: Dict[str, str] = {
+DEFAULT_MODELS: dict[str, str] = {
     "mace_mp": "medium",
     "mace": "small",
     "sevennet": "7net-0",

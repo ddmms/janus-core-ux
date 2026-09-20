@@ -1,11 +1,13 @@
 """Environment Manager for multi-MLIP environments support."""
 
-import os
-import sys
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
 import json
+import os
 import subprocess
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict, field
+import sys
+from typing import Any
 
 # Known MLIP models and their required Python packages
 MODEL_PACKAGE_MAP = {
@@ -53,6 +55,7 @@ MODEL_PACKAGE_MAP = {
     },
 }
 
+
 @dataclass
 class EnvConfig:
     name: str
@@ -61,15 +64,16 @@ class EnvConfig:
     is_default: bool = False
     python_version: str = ""
     has_janus_core: bool = False
-    installed_packages: Dict[str, bool] = field(default_factory=dict)
-    supported_architectures: List[str] = field(default_factory=list)
+    installed_packages: dict[str, bool] = field(default_factory=dict)
+    supported_architectures: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "EnvConfig":
+    def from_dict(cls, d: dict[str, Any]) -> EnvConfig:
         return cls(**d)
+
 
 class EnvironmentManager:
     """Manages separate Python / Conda / Micromamba environments for incompatible MLIP potentials."""
@@ -91,7 +95,7 @@ class EnvironmentManager:
         os.makedirs(self.config_dir, exist_ok=True)
         self.config_file = os.path.join(self.config_dir, "environments.json")
 
-        self.environments: Dict[str, EnvConfig] = {}
+        self.environments: dict[str, EnvConfig] = {}
         self.load_or_discover()
 
     def load_or_discover(self):
@@ -105,7 +109,7 @@ class EnvironmentManager:
         if not os.path.exists(self.config_file):
             return False
         try:
-            with open(self.config_file, "r", encoding="utf-8") as f:
+            with open(self.config_file, encoding="utf-8") as f:
                 data = json.load(f)
             self.environments.clear()
             for item in data.get("environments", []):
@@ -128,7 +132,7 @@ class EnvironmentManager:
         except Exception as e:
             print(f"Error saving environments configuration: {e}")
 
-    def probe_environment(self, python_path: str) -> Dict[str, Any]:
+    def probe_environment(self, python_path: str) -> dict[str, Any]:
         """Inspect a Python executable to check Python version, janus-core, and installed MLIP packages."""
         if not os.path.exists(python_path):
             return {
@@ -166,12 +170,18 @@ for k, mod in probes.items():
 print(json.dumps(res))
 """
         try:
-            proc = subprocess.run([python_path, "-c", code], capture_output=True, text=True, timeout=10)
+            proc = subprocess.run(
+                [python_path, "-c", code], capture_output=True, text=True, timeout=10
+            )
             if proc.returncode == 0:
                 data = json.loads(proc.stdout.strip())
                 archs = []
                 for model_key, meta in MODEL_PACKAGE_MAP.items():
-                    probe_key = "mace" if model_key == "mace" else ("sevenn" if model_key == "sevennet" else model_key)
+                    probe_key = (
+                        "mace"
+                        if model_key == "mace"
+                        else ("sevenn" if model_key == "sevennet" else model_key)
+                    )
                     if data["packages"].get(probe_key, False):
                         archs.extend(meta["architectures"])
                 return {
@@ -200,7 +210,12 @@ print(json.dumps(res))
 
         # 2. Micromamba envs
         try:
-            res = subprocess.run(["micromamba", "env", "list", "--json"], capture_output=True, text=True, timeout=5)
+            res = subprocess.run(
+                ["micromamba", "env", "list", "--json"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
             if res.returncode == 0:
                 data = json.loads(res.stdout)
                 for env_path in data.get("envs", []):
@@ -215,7 +230,9 @@ print(json.dumps(res))
         if os.path.exists("/opt/micromamba/envs"):
             try:
                 for entry in os.listdir("/opt/micromamba/envs"):
-                    py_path = os.path.join("/opt/micromamba/envs", entry, "bin", "python")
+                    py_path = os.path.join(
+                        "/opt/micromamba/envs", entry, "bin", "python"
+                    )
                     if os.path.exists(py_path):
                         found_paths.append((f"micromamba: {entry}", py_path))
             except Exception:
@@ -233,7 +250,9 @@ print(json.dumps(res))
             bin_dir = os.path.dirname(py_path)
 
             # Set 'janus' as default if found
-            is_default = ("janus" in name.lower() and "bin/python" in py_path) or len(self.environments) == 0
+            is_default = ("janus" in name.lower() and "bin/python" in py_path) or len(
+                self.environments
+            ) == 0
 
             cfg = EnvConfig(
                 name=name,
@@ -248,7 +267,9 @@ print(json.dumps(res))
             self.environments[name] = cfg
 
         # Ensure at least one default
-        if self.environments and not any(e.is_default for e in self.environments.values()):
+        if self.environments and not any(
+            e.is_default for e in self.environments.values()
+        ):
             list(self.environments.values())[0].is_default = True
 
     def add_environment(self, name: str, python_path: str) -> EnvConfig:
@@ -282,10 +303,10 @@ print(json.dumps(res))
     def set_default_environment(self, name: str):
         if name in self.environments:
             for k, env in self.environments.items():
-                env.is_default = (k == name)
+                env.is_default = k == name
             self.save_to_file()
 
-    def get_default_environment(self) -> Optional[EnvConfig]:
+    def get_default_environment(self) -> EnvConfig | None:
         for env in self.environments.values():
             if env.is_default:
                 return env
@@ -293,10 +314,10 @@ print(json.dumps(res))
             return list(self.environments.values())[0]
         return None
 
-    def get_environment(self, name: str) -> Optional[EnvConfig]:
+    def get_environment(self, name: str) -> EnvConfig | None:
         return self.environments.get(name)
 
-    def get_environments_for_arch(self, arch: str) -> List[EnvConfig]:
+    def get_environments_for_arch(self, arch: str) -> list[EnvConfig]:
         """Find environments that contain the package for a specific MLIP architecture."""
         matching = []
         for env in self.environments.values():

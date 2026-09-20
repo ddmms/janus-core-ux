@@ -1,14 +1,23 @@
 """Prominent structure file upload and selection widget with drag-and-drop support."""
 
+from __future__ import annotations
+
 import os
-from typing import Optional
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QGroupBox
-)
-import ase.io
+
 from ase import Atoms
+import ase.io
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class StructureFileInput(QWidget):
@@ -21,11 +30,11 @@ class StructureFileInput(QWidget):
         self,
         title: str = "Input Structure File",
         require_periodic: bool = False,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self.require_periodic = require_periodic
-        self.current_atoms: Optional[Atoms] = None
+        self.current_atoms: Atoms | None = None
         self._current_path: str = ""
 
         self.setAcceptDrops(True)
@@ -42,20 +51,26 @@ class StructureFileInput(QWidget):
         # File selection row
         file_row = QHBoxLayout()
         self.input_file = QLineEdit()
-        self.input_file.setPlaceholderText("Select, enter path, or drop structure file (.cif, .xyz, .poscar, .extxyz, ...)")
+        self.input_file.setPlaceholderText(
+            "Select, enter path, or drop structure file (.cif, .xyz, .poscar, .extxyz, ...)"
+        )
         self.input_file.returnPressed.connect(self._on_path_entered)
         file_row.addWidget(self.input_file)
 
         self.btn_browse = QPushButton("📂 Upload / Browse...")
         self.btn_browse.setStyleSheet("padding: 6px 12px; font-weight: bold;")
-        self.btn_browse.setToolTip("Upload or select an atomic structure file from your system")
+        self.btn_browse.setToolTip(
+            "Upload or select an atomic structure file from your system"
+        )
         self.btn_browse.clicked.connect(self.browse_file)
         file_row.addWidget(self.btn_browse)
 
         group_layout.addLayout(file_row)
 
         # Status info row
-        self.lbl_info = QLabel("No structure file uploaded. Please upload a file to proceed.")
+        self.lbl_info = QLabel(
+            "No structure file uploaded. Please upload a file to proceed."
+        )
         self.lbl_info.setStyleSheet("color: #a6adc8; font-size: 11px;")
         group_layout.addWidget(self.lbl_info)
 
@@ -87,7 +102,7 @@ class StructureFileInput(QWidget):
             self,
             "Upload / Select Atomic Structure File",
             "",
-            "Atomic Structure Files (*.cif *.xyz *.poscar *.extxyz *.pdb *.json *.gen *.vasp);;All Files (*)"
+            "Atomic Structure Files (*.cif *.xyz *.poscar *.extxyz *.pdb *.json *.gen *.vasp);;All Files (*)",
         )
         if filepath:
             self.load_file(filepath)
@@ -96,7 +111,9 @@ class StructureFileInput(QWidget):
         """Load atomic structure from file with ASE and notify listeners."""
         filepath = os.path.abspath(os.path.expanduser(filepath.strip()))
         if not os.path.isfile(filepath):
-            QMessageBox.critical(self, "File Not Found", f"File does not exist:\n{filepath}")
+            QMessageBox.critical(
+                self, "File Not Found", f"File does not exist:\n{filepath}"
+            )
             return False
 
         try:
@@ -106,7 +123,7 @@ class StructureFileInput(QWidget):
                     self,
                     "Periodic Boundary Warning",
                     f"The loaded file '{os.path.basename(filepath)}' does not have periodic boundary conditions (PBC) enabled.\n"
-                    "This calculation typically requires a 3D periodic crystal unit cell."
+                    "This calculation typically requires a 3D periodic crystal unit cell.",
                 )
 
             self.current_atoms = atoms
@@ -117,8 +134,12 @@ class StructureFileInput(QWidget):
             n_atoms = len(atoms)
             pbc = "Periodic" if atoms.pbc.any() else "Molecule/Cluster"
             filename = os.path.basename(filepath)
-            self.lbl_info.setText(f"✓ Loaded: {formula} ({n_atoms} atoms, {pbc}) — {filename}")
-            self.lbl_info.setStyleSheet("color: #a6e3a1; font-weight: bold; font-size: 11px;")
+            self.lbl_info.setText(
+                f"✓ Loaded: {formula} ({n_atoms} atoms, {pbc}) — {filename}"
+            )
+            self.lbl_info.setStyleSheet(
+                "color: #a6e3a1; font-weight: bold; font-size: 11px;"
+            )
 
             self.structure_loaded.emit(atoms, filepath)
             return True
@@ -126,7 +147,7 @@ class StructureFileInput(QWidget):
             QMessageBox.critical(
                 self,
                 "Error Loading Structure",
-                f"Could not parse atomic structure file '{os.path.basename(filepath)}':\n{e}"
+                f"Could not parse atomic structure file '{os.path.basename(filepath)}':\n{e}",
             )
             return False
 
@@ -134,12 +155,14 @@ class StructureFileInput(QWidget):
         self.current_atoms = None
         self._current_path = ""
         self.input_file.clear()
-        self.lbl_info.setText("No structure file uploaded. Please upload a file to proceed.")
+        self.lbl_info.setText(
+            "No structure file uploaded. Please upload a file to proceed."
+        )
         self.lbl_info.setStyleSheet("color: #a6adc8; font-size: 11px;")
         self.structure_cleared.emit()
 
     def get_filepath(self) -> str:
         return self._current_path or self.input_file.text().strip()
 
-    def get_atoms(self) -> Optional[Atoms]:
+    def get_atoms(self) -> Atoms | None:
         return self.current_atoms

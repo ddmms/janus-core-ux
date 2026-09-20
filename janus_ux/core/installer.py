@@ -1,8 +1,12 @@
 """Asynchronous package installer for multi-environment MLIP setup using uv."""
 
+from __future__ import annotations
+
 import os
 import subprocess
+
 from PySide6.QtCore import QThread, Signal
+
 
 class PackageInstaller(QThread):
     """Background worker to install MLIP packages into a specific environment using uv."""
@@ -18,7 +22,9 @@ class PackageInstaller(QThread):
 
     def run(self):
         pkg_str = " ".join(self.packages)
-        self.log_line.emit(f"[INFO] Installing: {pkg_str} into {self.python_path} via uv...")
+        self.log_line.emit(
+            f"[INFO] Installing: {pkg_str} into {self.python_path} via uv..."
+        )
 
         cmd = ["uv", "pip", "install"] + self.packages + ["--python", self.python_path]
         try:
@@ -46,8 +52,12 @@ class PackageInstaller(QThread):
                 self.log_line.emit(f"[SUCCESS] Successfully installed {pkg_str}!")
                 self.finished_install.emit(True, f"Installed {pkg_str}")
             else:
-                self.log_line.emit(f"[ERROR] uv pip install failed with exit code {ret}")
-                self.finished_install.emit(False, f"Installation failed (exit code {ret})")
+                self.log_line.emit(
+                    f"[ERROR] uv pip install failed with exit code {ret}"
+                )
+                self.finished_install.emit(
+                    False, f"Installation failed (exit code {ret})"
+                )
         except Exception as e:
             self.log_line.emit(f"[ERROR] Exception during installation: {str(e)}")
             self.finished_install.emit(False, str(e))

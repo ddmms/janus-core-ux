@@ -1,28 +1,31 @@
 """Integration and end-to-end tests for all calculation modes using NaCl.cif and mace_mp medium-0b3."""
 
+from __future__ import annotations
+
 import os
 import shutil
-import tempfile
-import pytest
-from PySide6.QtWidgets import QApplication
-import ase.io
 
+import ase.io
+from PySide6.QtWidgets import QApplication
+import pytest
+
+from janus_ux.core.runner import CalcRunner
 from janus_ux.tabs import (
-    SinglePointTab,
+    DescriptorsTab,
+    ElasticityTab,
+    EOSTab,
     GeomOptTab,
     MDTab,
-    PhononsTab,
-    EOSTab,
-    ElasticityTab,
     NEBTab,
-    DescriptorsTab,
+    PhononsTab,
+    SinglePointTab,
 )
 from janus_ux.widgets.calculator_selector import CalculatorSelector
-from janus_ux.core.runner import CalcRunner
 
 # Detect if mace is importable in the current python runtime
 try:
     import mace  # noqa: F401
+
     HAS_MACE = True
 except ImportError:
     HAS_MACE = False
@@ -52,6 +55,7 @@ def test_modes_cli_args_with_nacl(qapp, nacl_file, monkeypatch):
     captured = {}
 
     orig_init = CalcRunner.__init__
+
     def fake_init(self, command, args, **kwargs):
         captured[command] = args
         orig_init(self, command, args, **kwargs)
@@ -185,7 +189,9 @@ def test_modes_output_parsing(qapp, tmp_path):
     t_sp = SinglePointTab()
     test_xyz = tmp_path / "sp_res.extxyz"
     atoms = ase.io.read("NaCl.cif")
-    calc = SinglePointCalculator(atoms, energy=-27.0314, forces=np.zeros((len(atoms), 3)))
+    calc = SinglePointCalculator(
+        atoms, energy=-27.0314, forces=np.zeros((len(atoms), 3))
+    )
     atoms.calc = calc
     ase.io.write(str(test_xyz), atoms)
     t_sp._on_singlepoint_finished(True, "", {"out_file": str(test_xyz)})
@@ -197,12 +203,17 @@ def test_modes_output_parsing(qapp, tmp_path):
     fit_file = tmp_path / "eos-fit.dat"
     fit_file.write_text("#B0 E0 V0\n25.89 -27.035 184.30\n")
     t_eos._on_eos_finished(True, "", {"fit_dat": str(fit_file)})
-    assert any("25.89" in line for line in t_eos.log_console.text_edit.toPlainText().splitlines())
+    assert any(
+        "25.89" in line
+        for line in t_eos.log_console.text_edit.toPlainText().splitlines()
+    )
 
     # 3. Elasticity parsing
     t_el = ElasticityTab()
     tens_file = tmp_path / "elastic_tensor.dat"
-    tens_vals = "25.89 25.89 25.89 16.24 16.60 16.42 40.67 0.10 0.238 " + " ".join(["10.0"] * 36)
+    tens_vals = "25.89 25.89 25.89 16.24 16.60 16.42 40.67 0.10 0.238 " + " ".join(
+        ["10.0"] * 36
+    )
     tens_file.write_text(f"# header\n{tens_vals}\n")
     t_el._on_elasticity_finished(True, "", {"tensor_file": str(tens_file)})
     assert "25.89" in t_el.lbl_bulk.text()
@@ -215,19 +226,23 @@ def test_modes_output_parsing(qapp, tmp_path):
     neb_res = tmp_path / "neb-results.dat"
     neb_res.write_text("#Barrier deltaE maxF\n0.1234 -0.0450 0.0790\n")
     t_neb._on_neb_finished(True, "", {"results_file": str(neb_res)})
-    assert any("0.1234" in line for line in t_neb.log_console.text_edit.toPlainText().splitlines())
+    assert any(
+        "0.1234" in line
+        for line in t_neb.log_console.text_edit.toPlainText().splitlines()
+    )
 
 
 @pytest.mark.skipif(not HAS_MACE, reason="mace is not installed in this environment")
 def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
     """End-to-end execution of all 8 calculation modes using NaCl.cif and mace_mp medium-0b3."""
-    import sys
-    import shutil
     import subprocess
+    import sys
 
     work_dir = str(tmp_path)
 
-    janus_bin = shutil.which("janus") or os.path.join(os.path.dirname(sys.executable), "janus")
+    janus_bin = shutil.which("janus") or os.path.join(
+        os.path.dirname(sys.executable), "janus"
+    )
 
     def run_janus(subcommand, args):
         if os.path.exists(janus_bin):
@@ -240,113 +255,187 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
                 subcommand,
             ] + args
         res = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True)
-        assert res.returncode == 0, f"{subcommand} failed:\nSTDOUT: {res.stdout}\nSTDERR: {res.stderr}"
+        assert res.returncode == 0, (
+            f"{subcommand} failed:\nSTDOUT: {res.stdout}\nSTDERR: {res.stderr}"
+        )
         return res
 
     # 1. SinglePoint
     sp_out = os.path.join(work_dir, "sp-results.extxyz")
-    run_janus("singlepoint", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--properties", "energy",
-        "--properties", "forces",
-        "--file-prefix", os.path.join(work_dir, "sp"),
-        "--out", sp_out,
-        "--no-tracker"
-    ])
+    run_janus(
+        "singlepoint",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--properties",
+            "energy",
+            "--properties",
+            "forces",
+            "--file-prefix",
+            os.path.join(work_dir, "sp"),
+            "--out",
+            sp_out,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(sp_out)
 
     # 2. GeomOpt
     opt_prefix = os.path.join(work_dir, "opt")
-    run_janus("geomopt", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--steps", "2",
-        "--fmax", "0.2",
-        "--write-traj",
-        "--file-prefix", opt_prefix,
-        "--no-tracker"
-    ])
-    assert os.path.exists(f"{opt_prefix}-opt.extxyz") or os.path.exists(f"{opt_prefix}-opt.xyz")
+    run_janus(
+        "geomopt",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--steps",
+            "2",
+            "--fmax",
+            "0.2",
+            "--write-traj",
+            "--file-prefix",
+            opt_prefix,
+            "--no-tracker",
+        ],
+    )
+    assert os.path.exists(f"{opt_prefix}-opt.extxyz") or os.path.exists(
+        f"{opt_prefix}-opt.xyz"
+    )
 
     # 3. MD
     md_prefix = os.path.join(work_dir, "md")
     traj_f = os.path.join(work_dir, "md-traj.extxyz")
     stats_f = os.path.join(work_dir, "md-stats.dat")
-    run_janus("md", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--ensemble", "nvt",
-        "--temp", "300",
-        "--timestep", "1.0",
-        "--steps", "2",
-        "--traj-every", "1",
-        "--traj-file", traj_f,
-        "--stats-file", stats_f,
-        "--file-prefix", md_prefix,
-        "--no-tracker"
-    ])
+    run_janus(
+        "md",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--ensemble",
+            "nvt",
+            "--temp",
+            "300",
+            "--timestep",
+            "1.0",
+            "--steps",
+            "2",
+            "--traj-every",
+            "1",
+            "--traj-file",
+            traj_f,
+            "--stats-file",
+            stats_f,
+            "--file-prefix",
+            md_prefix,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(traj_f)
     assert os.path.exists(stats_f)
 
     # 4. Phonons
     ph_prefix = os.path.join(work_dir, "ph")
-    run_janus("phonons", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--supercell", "1 1 1",
-        "--displacement", "0.01",
-        "--file-prefix", ph_prefix,
-        "--no-tracker"
-    ])
+    run_janus(
+        "phonons",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--supercell",
+            "1 1 1",
+            "--displacement",
+            "0.01",
+            "--file-prefix",
+            ph_prefix,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(f"{ph_prefix}-force_constants.hdf5")
 
     # 5. EOS
     eos_prefix = os.path.join(work_dir, "eos")
-    run_janus("eos", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--min-volume", "0.98",
-        "--max-volume", "1.02",
-        "--n-volumes", "5",
-        "--write-structures",
-        "--file-prefix", eos_prefix,
-        "--no-tracker"
-    ])
+    run_janus(
+        "eos",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--min-volume",
+            "0.98",
+            "--max-volume",
+            "1.02",
+            "--n-volumes",
+            "5",
+            "--write-structures",
+            "--file-prefix",
+            eos_prefix,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(f"{eos_prefix}-eos-fit.dat")
 
     # 6. Elasticity
     el_prefix = os.path.join(work_dir, "el")
-    run_janus("elasticity", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--shear-magnitude", "0.02",
-        "--normal-magnitude", "0.01",
-        "--n-strains", "2",
-        "--write-structures",
-        "--file-prefix", el_prefix,
-        "--no-tracker"
-    ])
+    run_janus(
+        "elasticity",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--shear-magnitude",
+            "0.02",
+            "--normal-magnitude",
+            "0.01",
+            "--n-strains",
+            "2",
+            "--write-structures",
+            "--file-prefix",
+            el_prefix,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(f"{el_prefix}-elastic_tensor.dat")
 
     # 7. Descriptors
     desc_out = os.path.join(work_dir, "desc.extxyz")
-    run_janus("descriptors", [
-        "--struct", nacl_file,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--calc-per-atom",
-        "--invariants-only",
-        "--file-prefix", os.path.join(work_dir, "desc"),
-        "--out", desc_out,
-        "--no-tracker"
-    ])
+    run_janus(
+        "descriptors",
+        [
+            "--struct",
+            nacl_file,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--calc-per-atom",
+            "--invariants-only",
+            "--file-prefix",
+            os.path.join(work_dir, "desc"),
+            "--out",
+            desc_out,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(desc_out)
 
     # 8. NEB
@@ -356,15 +445,25 @@ def test_all_8_modes_end_to_end_nacl(nacl_file, tmp_path):
     ase.io.write(disp_nacl, at)
 
     neb_prefix = os.path.join(work_dir, "neb")
-    run_janus("neb", [
-        "--init-struct", nacl_file,
-        "--final-struct", disp_nacl,
-        "--arch", "mace_mp",
-        "--model", "medium-0b3",
-        "--n-images", "3",
-        "--steps", "2",
-        "--write-band",
-        "--file-prefix", neb_prefix,
-        "--no-tracker"
-    ])
+    run_janus(
+        "neb",
+        [
+            "--init-struct",
+            nacl_file,
+            "--final-struct",
+            disp_nacl,
+            "--arch",
+            "mace_mp",
+            "--model",
+            "medium-0b3",
+            "--n-images",
+            "3",
+            "--steps",
+            "2",
+            "--write-band",
+            "--file-prefix",
+            neb_prefix,
+            "--no-tracker",
+        ],
+    )
     assert os.path.exists(f"{neb_prefix}-neb-results.dat")

@@ -1,13 +1,16 @@
 """Interactive 2D & 3D Plotly graphs embedded in QWebEngineView with point picking."""
 
+from __future__ import annotations
+
 import os
-import json
 import tempfile
-from typing import List, Dict, Any, Optional
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtCore import QUrl, Signal, Slot
+from typing import Any
+
 import plotly.graph_objects as go
+from PySide6.QtCore import QUrl, Signal, Slot
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+
 
 class InteractiveGraph(QWidget):
     """Interactive Plotly graph with click event emission back to Qt."""
@@ -17,7 +20,9 @@ class InteractiveGraph(QWidget):
     def __init__(self, parent=None, title: str = "Interactive Plot"):
         super().__init__(parent)
         self.plot_title = title
-        self._temp_html_path = os.path.join(tempfile.gettempdir(), f"plotly_{id(self)}.html")
+        self._temp_html_path = os.path.join(
+            tempfile.gettempdir(), f"plotly_{id(self)}.html"
+        )
 
         self._setup_ui()
 
@@ -135,13 +140,13 @@ function resetAxes() {{
 
     def plot_curve(
         self,
-        x: List[float],
-        y: List[float],
+        x: list[float],
+        y: list[float],
         x_label: str = "Step",
         y_label: str = "Energy (eV)",
         name: str = "Trajectory",
         color: str = "#89b4fa",
-        secondary_y: Optional[Dict[str, Any]] = None,
+        secondary_y: dict[str, Any] | None = None,
     ):
         """Convenience method to plot a 2D line curve with markers."""
         fig = go.Figure()
@@ -191,11 +196,15 @@ function resetAxes() {{
         fig.update_layout(
             xaxis_title=x_label,
             yaxis_title=y_label,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
         )
 
         self.plot_figure(fig)
 
     @Slot()
     def reset_axes(self):
-        self.web_view.page().runJavaScript("if (typeof resetAxes === 'function') resetAxes();")
+        self.web_view.page().runJavaScript(
+            "if (typeof resetAxes === 'function') resetAxes();"
+        )
