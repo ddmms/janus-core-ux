@@ -53,3 +53,23 @@ def test_main_window(qapp):
     assert "Geometry Optimization" in win.tab_widget.tabText(0)
     assert "Single Point" in win.tab_widget.tabText(1)
     assert "Environments" in win.tab_widget.tabText(8)
+
+def test_singlepoint_cli_args(qapp, tmp_path, monkeypatch):
+    t_sp = SinglePointTab()
+    t_sp._on_preset_selected("Silicon (Diamond)")
+    t_sp.chk_forces.setChecked(True)
+    t_sp.chk_stress.setChecked(True)
+
+    captured_args = []
+    from janus_ux.core.runner import CalcRunner
+    orig_init = CalcRunner.__init__
+    def fake_init(self, command, args, **kwargs):
+        captured_args.extend(args)
+        orig_init(self, command, args, **kwargs)
+    monkeypatch.setattr(CalcRunner, "__init__", fake_init)
+    monkeypatch.setattr(CalcRunner, "start", lambda self: None)
+
+    t_sp.run_singlepoint()
+
+    assert "--properties" in captured_args
+    assert "--property" not in captured_args

@@ -238,7 +238,7 @@ class SinglePointTab(QWidget):
             properties.append("hessian")
 
         for prop in properties:
-            args.extend(["--property", prop])
+            args.extend(["--properties", prop])
 
         expected = {"out_file": out_file}
 
