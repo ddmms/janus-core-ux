@@ -3,12 +3,23 @@
 import sys
 import os
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 
 from janus_ux.app import MainWindow
+from janus_ux.core.desktop_integration import install_desktop_entry, get_asset_path
 
 def main():
-    """Launch the Janus Core desktop UX."""
+    """Launch the Janus Core desktop UX or handle CLI options."""
+    if "--install-desktop" in sys.argv:
+        success = install_desktop_entry()
+        if success:
+            print("Desktop icon and .desktop shortcut installed successfully to ~/.local/share/applications!")
+            sys.exit(0)
+        else:
+            print("Failed to install desktop shortcut.")
+            sys.exit(1)
+
     # Enable high DPI scaling
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
@@ -19,7 +30,17 @@ def main():
     app.setApplicationName("Janus-Core UX")
     app.setOrganizationName("STFC")
 
+    # Set Application Icon
+    icon_path = get_asset_path("icon.png")
+    if not os.path.exists(icon_path):
+        icon_path = get_asset_path("icon.svg")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+
     window = MainWindow()
+    if os.path.exists(icon_path):
+        window.setWindowIcon(QIcon(icon_path))
+
     window.show()
 
     sys.exit(app.exec())

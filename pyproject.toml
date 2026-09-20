@@ -5,10 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "janus-core-ux"
 version = "0.1.0"
-description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemiscope 3D visualization and interactive graphs"
+description = "Modern Qt6 / PySide6 desktop UX for STFC janus-core with Chemiscope 3D visualization, interactive graphs, and multi-MLIP support"
 authors = [{ name = "Janus UX Team" }]
 readme = "README.md"
+license = { text = "BSD-3-Clause" }
 requires-python = ">=3.10"
+keywords = ["atomistic", "simulation", "mlip", "mace", "sevennet", "chemiscope", "pyside6", "qt6", "materials-science"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "pyside6>=6.8.0",
     "ase>=3.23.0",
@@ -18,9 +31,25 @@ dependencies = [
     "numpy",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-qt>=4.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stfc/janus-core"
+Repository = "https://github.com/stfc/janus-core"
+Documentation = "https://context7.com/stfc/janus-core"
+
 [project.scripts]
+janus-core-ux = "janus_ux.main:main"
+janu-core-ux = "janus_ux.main:main"
 janus-ux = "janus_ux.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["janus_ux*"]
+
+[tool.setuptools.package-data]
+"janus_ux" = ["assets/*"]

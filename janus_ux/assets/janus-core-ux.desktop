@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Janus-Core UX
+GenericName=Atomistic Simulation GUI
+Comment=Desktop UX for STFC janus-core with Chemiscope 3D Visualization and Multi-MLIP Support
+Exec=janus-core-ux
+Icon=janus-core-ux
+Terminal=false
+Categories=Science;Physics;Chemistry;Education;
+Keywords=janus;atomistic;chemiscope;materials;ase;mlip;mace;sevennet;chgnet;fairchem;
+StartupNotify=true
+StartupWMClass=janus-core-ux

@@ -88,6 +88,13 @@ class MainWindow(QMainWindow):
 
         # Help Menu
         help_menu = menubar.addMenu("&Help")
+
+        action_desktop = QAction("&Install Desktop Shortcut", self)
+        action_desktop.triggered.connect(self._install_desktop_shortcut)
+        help_menu.addAction(action_desktop)
+
+        help_menu.addSeparator()
+
         action_about = QAction("&About Janus-Core UX", self)
         action_about.triggered.connect(self._show_about)
         help_menu.addAction(action_about)
@@ -156,6 +163,21 @@ class MainWindow(QMainWindow):
                 current_tab.combo_preset.setCurrentIndex(idx)
             elif hasattr(current_tab, "_on_preset_selected"):
                 current_tab._on_preset_selected(name)
+
+    def _install_desktop_shortcut(self):
+        from janus_ux.core.desktop_integration import install_desktop_entry
+        try:
+            ok = install_desktop_entry()
+            if ok:
+                QMessageBox.information(
+                    self,
+                    "Desktop Shortcut Installed",
+                    "Janus-Core UX desktop shortcut and application icon have been installed to your system applications menu (~/.local/share/applications/janus-core-ux.desktop)."
+                )
+            else:
+                QMessageBox.warning(self, "Installation Failed", "Could not install desktop shortcut.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to install desktop shortcut: {e}")
 
     def _show_about(self):
         QMessageBox.about(
