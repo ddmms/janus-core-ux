@@ -5,12 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 
+import yaml
+
 from ase import Atoms
 import numpy as np
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
+    QFileDialog,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -24,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from janus_ux.core.parser import extract_trajectory_properties, read_trajectory
+from janus_ux.core.parser import args_to_yaml_dict, extract_trajectory_properties, read_trajectory
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
@@ -44,7 +47,8 @@ class EOSTab(QWidget):
         self.current_atoms: Atoms | None = None
         self.strained_atoms: list[Atoms] = []
         self.runner: CalcRunner | None = None
-        self.temp_dir = tempfile.mkdtemp(prefix="janus_eos_")
+        self.working_dir: Path | None = None
+        self._last_args: list[str] = []
 
         self._setup_ui()
 
@@ -119,6 +123,14 @@ class EOSTab(QWidget):
         self.btn_cancel.clicked.connect(self.cancel_eos)
         btn_layout.addWidget(self.btn_cancel)
 
+        self.btn_save_config = QPushButton("💾 Save Config…")
+        self.btn_save_config.setEnabled(False)
+        self.btn_save_config.setToolTip(
+            "Save the YAML config used for the last run (re-usable with janus eos --config)."
+        )
+        self.btn_save_config.clicked.connect(self._save_config)
+        btn_layout.addWidget(self.btn_save_config)
+
         left_layout.addLayout(btn_layout)
         left_layout.addStretch()
 
@@ -184,6 +196,16 @@ class EOSTab(QWidget):
                 f"[INFO] Selected strained volume frame {index}"
             )
 
+    def set_working_dir(self, path: Path) -> None:
+        """Set the working directory for janus output files."""
+        self.working_dir = path
+
+    def _get_run_dir(self) -> str:
+        if self.working_dir is not None:
+            self.working_dir.mkdir(parents=True, exist_ok=True)
+            return str(self.working_dir)
+        return tempfile.mkdtemp(prefix="janus_eos_")
+
     def run_eos(self):
         """Run eos."""
         struct_file = self.struct_input.get_filepath()
@@ -195,7 +217,8 @@ class EOSTab(QWidget):
             )
             return
 
-        file_prefix = str(Path(self.temp_dir) / "eos")
+        run_dir = self._get_run_dir()
+        file_prefix = str(Path(run_dir) / "eos")
         out_traj_file = f"{file_prefix}-generated.extxyz"
         raw_dat = f"{file_prefix}-eos-raw.dat"
         fit_dat = f"{file_prefix}-eos-fit.dat"
@@ -231,8 +254,10 @@ class EOSTab(QWidget):
             "fit_dat": fit_dat,
         }
 
+        self._last_args = list(args)
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
+        self.btn_save_config.setEnabled(False)
         self.log_console.clear()
         self.log_console.append_log("[INFO] Calculating Equation of State (EOS)...")
 
@@ -240,7 +265,7 @@ class EOSTab(QWidget):
         self.runner = CalcRunner(
             "eos",
             args,
-            cwd=self.temp_dir,
+            cwd=run_dir,
             expected_output_files=expected,
             python_path=python_path,
             parent=self,
@@ -263,7 +288,10 @@ class EOSTab(QWidget):
         if not success:
             return
 
-        file_prefix = str(Path(self.temp_dir) / "eos")
+        self.btn_save_config.setEnabled(True)
+
+        run_dir = self._get_run_dir()
+        file_prefix = str(Path(run_dir) / "eos")
         candidates = [
             outputs.get("traj_file"),
             f"{file_prefix}-generated.extxyz",
@@ -329,3 +357,22 @@ class EOSTab(QWidget):
                             )
             except Exception:
                 pass
+
+    def _save_config(self) -> None:
+        """Save the YAML config used for the last run."""
+        save_dir = str(self.working_dir) if self.working_dir else str(Path.home())
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Janus Config File",
+            str(Path(save_dir) / "janus_eos_config.yaml"),
+            "YAML Config Files (*.yaml *.yml);;All Files (*)",
+        )
+        if not path:
+            return
+        config = args_to_yaml_dict(self._last_args)
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
+            self.log_console.append_log(f"[INFO] Config saved to: {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"Could not save config:\n{e}")

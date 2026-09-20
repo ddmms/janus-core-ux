@@ -7,6 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QAction, QIcon, QPixmap
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -49,6 +50,10 @@ class MainWindow(QMainWindow):
         self.resize(1380, 890)
         self.setMinimumSize(1000, 680)
 
+        # Working directory where janus calculations run and write output
+        self.working_dir: Path = Path.home() / "janus_results"
+        self.working_dir.mkdir(parents=True, exist_ok=True)
+
         # Apply global theme
         self.setStyleSheet(DARK_STYLESHEET)
 
@@ -61,6 +66,7 @@ class MainWindow(QMainWindow):
 
         self._setup_menus()
         self._setup_tabs()
+        self._apply_working_dir()
         self._setup_statusbar()
 
         # Apply CLI initial overrides if provided
@@ -114,6 +120,23 @@ class MainWindow(QMainWindow):
                 lambda checked=False, i=idx: self.tab_widget.setCurrentIndex(i)
             )
             calc_menu.addAction(act)
+
+        # Settings Menu
+        settings_menu = menubar.addMenu("&Settings")
+
+        action_workdir = QAction("📁 Set Working Folder…", self)
+        action_workdir.setShortcut("Ctrl+Shift+W")
+        action_workdir.setToolTip(
+            "Choose the folder where janus will run calculations and save output files."
+        )
+        action_workdir.triggered.connect(self._set_working_folder)
+        settings_menu.addAction(action_workdir)
+
+        settings_menu.addSeparator()
+
+        action_open_workdir = QAction("Open Working Folder in File Manager", self)
+        action_open_workdir.triggered.connect(self._open_working_folder)
+        settings_menu.addAction(action_open_workdir)
 
         # Help Menu
         help_menu = menubar.addMenu("&Help")
@@ -235,9 +258,57 @@ class MainWindow(QMainWindow):
     def _setup_statusbar(self):
         status = QStatusBar(self)
         status.showMessage(
-            "Janus-Core UX Ready | Multi-Environment MLIP Support Active"
+            f"Janus-Core UX Ready | Working folder: {self.working_dir}"
         )
         self.setStatusBar(status)
+
+    def _set_working_folder(self):
+        """Prompt the user to select a working folder for janus calculations."""
+        chosen = QFileDialog.getExistingDirectory(
+            self,
+            "Select Working Folder for Janus Calculations",
+            str(self.working_dir),
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks,
+        )
+        if chosen:
+            self.working_dir = Path(chosen)
+            self.working_dir.mkdir(parents=True, exist_ok=True)
+            self._apply_working_dir()
+            self.statusBar().showMessage(
+                f"Working folder set to: {self.working_dir}"
+            )
+
+    def _open_working_folder(self):
+        """Open the working folder in the system file manager."""
+        import subprocess
+        import sys
+
+        folder = str(self.working_dir)
+        try:
+            if sys.platform.startswith("linux"):
+                subprocess.Popen(["xdg-open", folder])
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", folder])
+            elif sys.platform == "win32":
+                subprocess.Popen(["explorer", folder])
+        except Exception as e:
+            QMessageBox.warning(self, "Cannot Open Folder", str(e))
+
+    def _apply_working_dir(self):
+        """Propagate the current working_dir to all calculation tabs."""
+        tabs_with_workdir = [
+            self.tab_geomopt,
+            self.tab_singlepoint,
+            self.tab_md,
+            self.tab_phonons,
+            self.tab_eos,
+            self.tab_elasticity,
+            self.tab_neb,
+            self.tab_descriptors,
+        ]
+        for tab in tabs_with_workdir:
+            if hasattr(tab, "set_working_dir"):
+                tab.set_working_dir(self.working_dir)
 
     def _open_structure(self):
         current_tab = self.tab_widget.currentWidget()

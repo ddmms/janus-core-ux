@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from janus_ux import __version__
@@ -58,9 +59,10 @@ def test_typer_cli_help():
     runner = CliRunner()
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "Janus Core" in result.stdout
-    assert "--tab" in result.stdout
-    assert "--arch" in result.stdout
+    clean_output = unstyle(result.stdout)
+    assert "Janus Core" in clean_output
+    assert "--tab" in clean_output
+    assert "--arch" in clean_output
 
 
 def test_typer_cli_version():

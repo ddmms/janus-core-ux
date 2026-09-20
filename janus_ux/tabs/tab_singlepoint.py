@@ -5,11 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 
+import yaml
+
 from ase import Atoms
 import numpy as np
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
+    QFileDialog,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -25,7 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from janus_ux.core.parser import read_trajectory
+from janus_ux.core.parser import args_to_yaml_dict, read_trajectory
 from janus_ux.core.runner import CalcRunner
 from janus_ux.widgets.calculator_selector import CalculatorSelector
 from janus_ux.widgets.chemiscope_widget import ChemiscopeWidget
@@ -44,7 +47,8 @@ class SinglePointTab(QWidget):
         self.current_atoms: Atoms | None = None
         self.result_atoms: Atoms | None = None
         self.runner: CalcRunner | None = None
-        self.temp_dir = tempfile.mkdtemp(prefix="janus_sp_")
+        self.working_dir: Path | None = None
+        self._last_args: list[str] = []
 
         self._setup_ui()
 
@@ -107,6 +111,14 @@ class SinglePointTab(QWidget):
         self.btn_cancel.setEnabled(False)
         self.btn_cancel.clicked.connect(self.cancel_singlepoint)
         btn_layout.addWidget(self.btn_cancel)
+
+        self.btn_save_config = QPushButton("💾 Save Config…")
+        self.btn_save_config.setEnabled(False)
+        self.btn_save_config.setToolTip(
+            "Save the YAML config used for the last run (re-usable with janus singlepoint --config)."
+        )
+        self.btn_save_config.clicked.connect(self._save_config)
+        btn_layout.addWidget(self.btn_save_config)
 
         left_layout.addLayout(btn_layout)
         left_layout.addStretch()
@@ -195,6 +207,16 @@ class SinglePointTab(QWidget):
     def _browse_structure(self):
         self.struct_input.browse_file()
 
+    def set_working_dir(self, path: Path) -> None:
+        """Set the working directory for janus output files."""
+        self.working_dir = path
+
+    def _get_run_dir(self) -> str:
+        if self.working_dir is not None:
+            self.working_dir.mkdir(parents=True, exist_ok=True)
+            return str(self.working_dir)
+        return tempfile.mkdtemp(prefix="janus_sp_")
+
     def run_singlepoint(self):
         """Run singlepoint."""
         struct_file = self.struct_input.get_filepath()
@@ -206,7 +228,8 @@ class SinglePointTab(QWidget):
             )
             return
 
-        file_prefix = str(Path(self.temp_dir) / "singlepoint")
+        run_dir = self._get_run_dir()
+        file_prefix = str(Path(run_dir) / "singlepoint")
         out_file = f"{file_prefix}-results.extxyz"
 
         # Build CLI arguments
@@ -233,8 +256,10 @@ class SinglePointTab(QWidget):
 
         expected = {"out_file": out_file}
 
+        self._last_args = list(args)
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
+        self.btn_save_config.setEnabled(False)
         self.log_console.clear()
         self.log_console.append_log("[INFO] Starting single-point calculation...")
 
@@ -242,7 +267,7 @@ class SinglePointTab(QWidget):
         self.runner = CalcRunner(
             "singlepoint",
             args,
-            cwd=self.temp_dir,
+            cwd=run_dir,
             expected_output_files=expected,
             python_path=python_path,
             parent=self,
@@ -264,6 +289,8 @@ class SinglePointTab(QWidget):
 
         if not success:
             return
+
+        self.btn_save_config.setEnabled(True)
 
         out_file = outputs.get("out_file")
         if out_file and Path(out_file).exists():
@@ -348,3 +375,22 @@ class SinglePointTab(QWidget):
         self.log_console.append_log(
             "[SUCCESS] Single point calculation results loaded."
         )
+
+    def _save_config(self) -> None:
+        """Save the YAML config used for the last run."""
+        save_dir = str(self.working_dir) if self.working_dir else str(Path.home())
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Janus Config File",
+            str(Path(save_dir) / "janus_singlepoint_config.yaml"),
+            "YAML Config Files (*.yaml *.yml);;All Files (*)",
+        )
+        if not path:
+            return
+        config = args_to_yaml_dict(self._last_args)
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
+            self.log_console.append_log(f"[INFO] Config saved to: {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"Could not save config:\n{e}")

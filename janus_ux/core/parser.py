@@ -101,6 +101,52 @@ def extract_trajectory_properties(traj: list[Atoms]) -> dict[str, dict[str, Any]
     return props
 
 
+def args_to_yaml_dict(args: list[str]) -> dict:
+    """Convert a flat CLI args list into a YAML-compatible dict for janus --config.
+
+    Pairs of ``--key value`` become ``{key: value}``; bare boolean flags
+    (``--flag`` with no following value or a following ``--...``) become
+    ``{flag: true}``.  Leading ``--`` is stripped and hyphens are replaced
+    with underscores to match janus config expectations.
+
+    Parameters
+    ----------
+    args
+        List of CLI arguments, e.g. ``['--arch', 'mace_mp', '--write-traj']``.
+
+    Returns
+    -------
+    dict
+        Config dict suitable for ``yaml.dump``.
+    """
+    config: dict = {}
+    i = 0
+    while i < len(args):
+        token = args[i]
+        if token.startswith("--"):
+            key = token[2:].replace("-", "_")
+            # Check if next token is a value or another flag (or end of list)
+            if i + 1 < len(args) and not args[i + 1].startswith("--"):
+                value: str | bool | int | float = args[i + 1]
+                # Coerce to numeric types where possible
+                try:
+                    value = int(value)
+                except ValueError:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
+                config[key] = value
+                i += 2
+            else:
+                # Boolean flag
+                config[key] = True
+                i += 1
+        else:
+            i += 1
+    return config
+
+
 def parse_md_stats(stats_path: str | Path) -> dict[str, np.ndarray]:
     """Parse thermodynamic statistics from an MD stats file."""
     p = Path(stats_path)

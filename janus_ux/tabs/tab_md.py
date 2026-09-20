@@ -5,12 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 
+import yaml
+
 from ase import Atoms
 import numpy as np
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
+    QFileDialog,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -25,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from janus_ux.core.parser import (
+    args_to_yaml_dict,
     extract_trajectory_properties,
     parse_md_stats,
     read_trajectory,
@@ -49,7 +53,8 @@ class MDTab(QWidget):
         self.traj_atoms: list[Atoms] = []
         self.stats_data: dict = {}
         self.runner: CalcRunner | None = None
-        self.temp_dir = tempfile.mkdtemp(prefix="janus_md_")
+        self.working_dir: Path | None = None
+        self._last_args: list[str] = []
 
         self._setup_ui()
 
@@ -134,6 +139,14 @@ class MDTab(QWidget):
         self.btn_cancel.clicked.connect(self.cancel_md)
         btn_layout.addWidget(self.btn_cancel)
 
+        self.btn_save_config = QPushButton("💾 Save Config…")
+        self.btn_save_config.setEnabled(False)
+        self.btn_save_config.setToolTip(
+            "Save the YAML config used for the last run (re-usable with janus md --config)."
+        )
+        self.btn_save_config.clicked.connect(self._save_config)
+        btn_layout.addWidget(self.btn_save_config)
+
         left_layout.addLayout(btn_layout)
         left_layout.addStretch()
 
@@ -196,6 +209,16 @@ class MDTab(QWidget):
             self.chemiscope.select_frame(index)
             self.inspector.load_structure(self.traj_atoms[index])
 
+    def set_working_dir(self, path: Path) -> None:
+        """Set the working directory for janus output files."""
+        self.working_dir = path
+
+    def _get_run_dir(self) -> str:
+        if self.working_dir is not None:
+            self.working_dir.mkdir(parents=True, exist_ok=True)
+            return str(self.working_dir)
+        return tempfile.mkdtemp(prefix="janus_md_")
+
     def run_md(self):
         """Run md."""
         struct_file = self.struct_input.get_filepath()
@@ -207,7 +230,8 @@ class MDTab(QWidget):
             )
             return
 
-        file_prefix = str(Path(self.temp_dir) / "md")
+        run_dir = self._get_run_dir()
+        file_prefix = str(Path(run_dir) / "md")
         traj_file = f"{file_prefix}-traj.extxyz"
         stats_file = f"{file_prefix}-stats.dat"
 
@@ -238,8 +262,10 @@ class MDTab(QWidget):
             "stats_file": stats_file,
         }
 
+        self._last_args = list(args)
         self.btn_run.setEnabled(False)
         self.btn_cancel.setEnabled(True)
+        self.btn_save_config.setEnabled(False)
         self.log_console.clear()
         self.log_console.append_log("[INFO] Starting Molecular Dynamics simulation...")
 
@@ -247,7 +273,7 @@ class MDTab(QWidget):
         self.runner = CalcRunner(
             "md",
             args,
-            cwd=self.temp_dir,
+            cwd=run_dir,
             expected_output_files=expected,
             python_path=python_path,
             parent=self,
@@ -269,6 +295,8 @@ class MDTab(QWidget):
 
         if not success:
             return
+
+        self.btn_save_config.setEnabled(True)
 
         traj_file = outputs.get("traj_file")
         stats_file = outputs.get("stats_file")
@@ -311,3 +339,22 @@ class MDTab(QWidget):
         self.log_console.append_log(
             "[SUCCESS] Molecular Dynamics trajectory and statistics rendered."
         )
+
+    def _save_config(self) -> None:
+        """Save the YAML config used for the last run."""
+        save_dir = str(self.working_dir) if self.working_dir else str(Path.home())
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Janus Config File",
+            str(Path(save_dir) / "janus_md_config.yaml"),
+            "YAML Config Files (*.yaml *.yml);;All Files (*)",
+        )
+        if not path:
+            return
+        config = args_to_yaml_dict(self._last_args)
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
+            self.log_console.append_log(f"[INFO] Config saved to: {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"Could not save config:\n{e}")
